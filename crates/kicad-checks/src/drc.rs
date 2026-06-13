@@ -182,6 +182,21 @@ mod tests {
     }
 
     #[test]
+    fn parses_a_real_kicad_cli_10_report() {
+        // Captured from `kicad-cli pcb drc --format json` (KiCad 10.0.3); pins the
+        // model to actual output rather than the documented schema.
+        let json = include_str!("../tests/fixtures/drc_report_kicad10.json");
+        let outcome = DrcReport::from_json(json)
+            .expect("real report parses")
+            .into_outcome();
+
+        assert_eq!(outcome.severity, Some(Severity::Error));
+        assert!(outcome.is_blocking());
+        // 13 violations + 2 unconnected, all error/warning (none ignored/excluded).
+        assert_eq!(outcome.findings.len(), 15);
+    }
+
+    #[test]
     fn unknown_severity_is_a_nonblocking_warning() {
         let outcome = DrcReport::from_json(
             r#"{ "violations": [{ "type": "new_check", "description": "x", "severity": "fatal" }] }"#,

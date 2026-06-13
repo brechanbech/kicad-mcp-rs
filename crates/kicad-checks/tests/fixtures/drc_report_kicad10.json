@@ -1,0 +1,343 @@
+{
+    "$schema": "https://schemas.kicad.org/drc.v1.json",
+    "coordinate_units": "mm",
+    "date": "2026-06-13T17:55:00",
+    "ignored_checks": [
+        {
+            "description": "Footprint has no courtyard defined",
+            "key": "missing_courtyard"
+        },
+        {
+            "description": "Track endpoint not centered on via",
+            "key": "track_not_centered_on_via"
+        },
+        {
+            "description": "Tuning profile track geometries",
+            "key": "tuning_profile_track_geometries"
+        },
+        {
+            "description": "Footprint doesn't match symbol's footprint filters",
+            "key": "footprint_filters_mismatch"
+        },
+        {
+            "description": "Footprint component type doesn't match footprint pads",
+            "key": "footprint_type_mismatch"
+        }
+    ],
+    "included_severities": [
+        "error",
+        "warning"
+    ],
+    "kicad_version": "10.0.3",
+    "schematic_parity": [],
+    "source": "two_resistor.kicad_pcb",
+    "unconnected_items": [
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Track [GND] on F.Cu, length 5.0000 mm",
+                    "pos": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "uuid": "e6b555e5-3a59-4e40-a4f6-2856b4ee2098"
+                },
+                {
+                    "description": "Pad 1 [GND] of R1 on F.Cu",
+                    "pos": {
+                        "x": 10.0,
+                        "y": 20.0
+                    },
+                    "uuid": "6c22f81a-0df5-4b28-9d88-da282985b4b4"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        },
+        {
+            "description": "Missing connection between items",
+            "items": [
+                {
+                    "description": "Pad 1 [GND] of R1 on F.Cu",
+                    "pos": {
+                        "x": 10.0,
+                        "y": 20.0
+                    },
+                    "uuid": "6c22f81a-0df5-4b28-9d88-da282985b4b4"
+                },
+                {
+                    "description": "Pad 2 [GND] of C1 on F.Cu",
+                    "pos": {
+                        "x": 16.0,
+                        "y": 20.0
+                    },
+                    "uuid": "443e9c7d-3439-42ed-bca4-6a6ef1b4929a"
+                }
+            ],
+            "severity": "error",
+            "type": "unconnected_items"
+        }
+    ],
+    "violations": [
+        {
+            "description": "Items shorting two nets (nets GND and SIG)",
+            "items": [
+                {
+                    "description": "Pad 1 [GND] of R1 on F.Cu",
+                    "pos": {
+                        "x": 10.0,
+                        "y": 20.0
+                    },
+                    "uuid": "6c22f81a-0df5-4b28-9d88-da282985b4b4"
+                },
+                {
+                    "description": "Pad 2 [SIG] of R1 on F.Cu",
+                    "pos": {
+                        "x": 11.0,
+                        "y": 20.0
+                    },
+                    "uuid": "ad7a3510-b87d-4c0b-a246-e1de4eefb9ec"
+                }
+            ],
+            "severity": "error",
+            "type": "shorting_items"
+        },
+        {
+            "description": "Items shorting two nets (nets VCC and GND)",
+            "items": [
+                {
+                    "description": "Pad 1 [VCC] of C1 on F.Cu",
+                    "pos": {
+                        "x": 15.0,
+                        "y": 20.0
+                    },
+                    "uuid": "2b2b669e-7535-4f54-a800-f8fc14d53ea8"
+                },
+                {
+                    "description": "Pad 2 [GND] of C1 on F.Cu",
+                    "pos": {
+                        "x": 16.0,
+                        "y": 20.0
+                    },
+                    "uuid": "443e9c7d-3439-42ed-bca4-6a6ef1b4929a"
+                }
+            ],
+            "severity": "error",
+            "type": "shorting_items"
+        },
+        {
+            "description": "Board has malformed outline (no edges found on Edge.Cuts layer)",
+            "items": [
+                {
+                    "description": "PCB",
+                    "pos": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "uuid": "fe3b4ea8-0a6a-4a3e-9426-ac6227d829ce"
+                }
+            ],
+            "severity": "error",
+            "type": "invalid_outline"
+        },
+        {
+            "description": "Front solder mask aperture bridges items with different nets",
+            "items": [
+                {
+                    "description": "Pad 1 [GND] of R1 on F.Cu",
+                    "pos": {
+                        "x": 10.0,
+                        "y": 20.0
+                    },
+                    "uuid": "6c22f81a-0df5-4b28-9d88-da282985b4b4"
+                },
+                {
+                    "description": "Pad 2 [SIG] of R1 on F.Cu",
+                    "pos": {
+                        "x": 11.0,
+                        "y": 20.0
+                    },
+                    "uuid": "ad7a3510-b87d-4c0b-a246-e1de4eefb9ec"
+                }
+            ],
+            "severity": "error",
+            "type": "solder_mask_bridge"
+        },
+        {
+            "description": "Front solder mask aperture bridges items with different nets",
+            "items": [
+                {
+                    "description": "Pad 1 [VCC] of C1 on F.Cu",
+                    "pos": {
+                        "x": 15.0,
+                        "y": 20.0
+                    },
+                    "uuid": "2b2b669e-7535-4f54-a800-f8fc14d53ea8"
+                },
+                {
+                    "description": "Pad 2 [GND] of C1 on F.Cu",
+                    "pos": {
+                        "x": 16.0,
+                        "y": 20.0
+                    },
+                    "uuid": "443e9c7d-3439-42ed-bca4-6a6ef1b4929a"
+                }
+            ],
+            "severity": "error",
+            "type": "solder_mask_bridge"
+        },
+        {
+            "description": "Track has unconnected end",
+            "items": [
+                {
+                    "description": "Track [GND] on F.Cu, length 5.0000 mm",
+                    "pos": {
+                        "x": 0.0,
+                        "y": 0.0
+                    },
+                    "uuid": "e6b555e5-3a59-4e40-a4f6-2856b4ee2098"
+                }
+            ],
+            "severity": "warning",
+            "type": "track_dangling"
+        },
+        {
+            "description": "Via is not connected or connected on only one layer",
+            "items": [
+                {
+                    "description": "Via [GND] on F.Cu - B.Cu",
+                    "pos": {
+                        "x": 5.0,
+                        "y": 0.0
+                    },
+                    "uuid": "681aa43f-71e9-48f6-b4ba-b5904cdddb7d"
+                }
+            ],
+            "severity": "warning",
+            "type": "via_dangling"
+        },
+        {
+            "description": "The current configuration does not include the footprint library 'Resistor_SMD'",
+            "items": [
+                {
+                    "description": "Footprint R1",
+                    "pos": {
+                        "x": 10.0,
+                        "y": 20.0
+                    },
+                    "uuid": "e7c96593-cea7-4141-8530-3d73a7bde6d9"
+                }
+            ],
+            "severity": "warning",
+            "type": "lib_footprint_issues"
+        },
+        {
+            "description": "The current configuration does not include the footprint library 'Capacitor_SMD'",
+            "items": [
+                {
+                    "description": "Footprint C1",
+                    "pos": {
+                        "x": 15.0,
+                        "y": 20.0
+                    },
+                    "uuid": "3f219b10-3dec-47be-b22f-f969052e3fb8"
+                }
+            ],
+            "severity": "warning",
+            "type": "lib_footprint_issues"
+        },
+        {
+            "description": "Silkscreen clipped by solder mask",
+            "items": [
+                {
+                    "description": "Reference field of R1",
+                    "pos": {
+                        "x": 10.0,
+                        "y": 20.0
+                    },
+                    "uuid": "eec6e75e-67bc-425d-b5d5-789ade49067f"
+                },
+                {
+                    "description": "Pad 1 [GND] of R1 on F.Cu",
+                    "pos": {
+                        "x": 10.0,
+                        "y": 20.0
+                    },
+                    "uuid": "6c22f81a-0df5-4b28-9d88-da282985b4b4"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_over_copper"
+        },
+        {
+            "description": "Silkscreen clipped by solder mask",
+            "items": [
+                {
+                    "description": "Reference field of R1",
+                    "pos": {
+                        "x": 10.0,
+                        "y": 20.0
+                    },
+                    "uuid": "eec6e75e-67bc-425d-b5d5-789ade49067f"
+                },
+                {
+                    "description": "Pad 2 [SIG] of R1 on F.Cu",
+                    "pos": {
+                        "x": 11.0,
+                        "y": 20.0
+                    },
+                    "uuid": "ad7a3510-b87d-4c0b-a246-e1de4eefb9ec"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_over_copper"
+        },
+        {
+            "description": "Silkscreen clipped by solder mask",
+            "items": [
+                {
+                    "description": "Reference field of C1",
+                    "pos": {
+                        "x": 15.0,
+                        "y": 20.0
+                    },
+                    "uuid": "8e31755e-a36a-4a64-81a8-6d2865098e81"
+                },
+                {
+                    "description": "Pad 1 [VCC] of C1 on F.Cu",
+                    "pos": {
+                        "x": 15.0,
+                        "y": 20.0
+                    },
+                    "uuid": "2b2b669e-7535-4f54-a800-f8fc14d53ea8"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_over_copper"
+        },
+        {
+            "description": "Silkscreen clipped by solder mask",
+            "items": [
+                {
+                    "description": "Reference field of C1",
+                    "pos": {
+                        "x": 15.0,
+                        "y": 20.0
+                    },
+                    "uuid": "8e31755e-a36a-4a64-81a8-6d2865098e81"
+                },
+                {
+                    "description": "Pad 2 [GND] of C1 on F.Cu",
+                    "pos": {
+                        "x": 16.0,
+                        "y": 20.0
+                    },
+                    "uuid": "443e9c7d-3439-42ed-bca4-6a6ef1b4929a"
+                }
+            ],
+            "severity": "warning",
+            "type": "silk_over_copper"
+        }
+    ]
+}
