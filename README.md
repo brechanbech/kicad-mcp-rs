@@ -65,7 +65,7 @@ Point your MCP client at the binary over stdio. Example client config:
 | Tool              | Backend | In default build | Notes                              |
 |-------------------|---------|------------------|------------------------------------|
 | `run_drc`         | cli     | yes              | Raw KiCad DRC JSON report          |
-| `quality_gate`    | cli + checks | yes         | DRC + DFM gates → pass/fail report |
+| `quality_gate`    | cli + checks | yes         | DRC + DFM gates → pass/fail; DFM geometry needs `--features files` |
 | `summarize_board` | files   | `--features files` | Footprints/nets/layers, headless |
 | `kicad_version`   | ipc     | `--features ipc` | Smoke test of the live connection  |
 

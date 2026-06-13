@@ -26,6 +26,19 @@ pub struct BoardSummary {
     pub copper_layers: usize,
 }
 
+/// Fab-relevant minimum geometry extracted from a board, in millimeters.
+///
+/// Fields are `None` when the board has no items of that kind (an empty board has no
+/// tracks, a fully SMD board has no drilled holes). The domain layer decides what an
+/// absent value means for a given gate; this crate only reports what it found.
+#[derive(Debug, Clone, Copy, serde::Serialize)]
+pub struct BoardGeometry {
+    /// Narrowest copper track (segment or arc) width, or `None` if there are no tracks.
+    pub min_trace_width_mm: Option<f64>,
+    /// Smallest drilled-hole (via or through-hole pad) diameter, or `None` if none.
+    pub min_drill_mm: Option<f64>,
+}
+
 /// Parses a `.kicad_pcb` and returns a high-level summary, without launching KiCad.
 ///
 /// # Errors
@@ -42,7 +55,8 @@ pub fn summarize_board(path: impl AsRef<Path>) -> Result<BoardSummary> {
     let path = path.as_ref();
     tracing::debug!(target: "kicad.files.parse.start", path = %path.display());
 
-    let doc = kiutils_rs::PcbFile::read(path).map_err(|e| Error::with_source(ErrorKind::File, e))?;
+    let doc =
+        kiutils_rs::PcbFile::read(path).map_err(|e| Error::with_source(ErrorKind::File, e))?;
     let ast = doc.ast();
 
     let footprints = ast.footprints.len();
@@ -59,7 +73,56 @@ pub fn summarize_board(path: impl AsRef<Path>) -> Result<BoardSummary> {
         .count();
 
     tracing::debug!(target: "kicad.files.parse.ok", footprints, nets, copper_layers);
-    Ok(BoardSummary { footprints, nets, copper_layers })
+    Ok(BoardSummary {
+        footprints,
+        nets,
+        copper_layers,
+    })
+}
+
+/// Extracts the board's minimum fab geometry (trace width, drill), without KiCad.
+///
+/// Feeds the design-for-manufacturability gates in `kicad-checks`. Track widths come
+/// from copper segments and arcs; drill diameters from vias and through-hole pads.
+///
+/// # Errors
+/// Returns [`ErrorKind::File`] if the path can't be read or parsed.
+pub fn extract_geometry(path: impl AsRef<Path>) -> Result<BoardGeometry> {
+    let path = path.as_ref();
+    tracing::debug!(target: "kicad.files.geometry.start", path = %path.display());
+
+    let doc =
+        kiutils_rs::PcbFile::read(path).map_err(|e| Error::with_source(ErrorKind::File, e))?;
+    let ast = doc.ast();
+
+    let trace_widths = ast
+        .segments
+        .iter()
+        .filter_map(|s| s.width)
+        .chain(ast.arcs.iter().filter_map(|a| a.width));
+    let min_trace_width_mm = min_positive(trace_widths);
+
+    let via_drills = ast.vias.iter().filter_map(|v| v.drill);
+    let pad_drills = ast
+        .footprints
+        .iter()
+        .flat_map(|f| &f.pads)
+        .filter_map(|p| p.drill.as_ref().and_then(|d| d.diameter));
+    let min_drill_mm = min_positive(via_drills.chain(pad_drills));
+
+    Ok(BoardGeometry {
+        min_trace_width_mm,
+        min_drill_mm,
+    })
+}
+
+/// Smallest strictly-positive value in `it`, or `None` if it yields none.
+///
+/// Strictly-positive guards against zero/negative widths from malformed input; the
+/// fold sidesteps `f64`'s lack of `Ord`.
+fn min_positive(it: impl Iterator<Item = f64>) -> Option<f64> {
+    it.filter(|v| *v > 0.0)
+        .fold(None, |acc, v| Some(acc.map_or(v, |a: f64| a.min(v))))
 }
 
 #[cfg(test)]
@@ -67,7 +130,9 @@ mod tests {
     use super::*;
 
     fn fixture(name: &str) -> std::path::PathBuf {
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name)
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures")
+            .join(name)
     }
 
     #[test]
@@ -84,5 +149,13 @@ mod tests {
     fn missing_file_is_a_file_error() {
         let err = summarize_board(fixture("does_not_exist.kicad_pcb")).unwrap_err();
         assert_eq!(err.kind(), ErrorKind::File);
+    }
+
+    #[test]
+    fn extracts_min_trace_and_drill() {
+        let geom = extract_geometry(fixture("two_resistor.kicad_pcb")).expect("parse fixture");
+        // Tracks are 0.25 and 0.2 mm wide; the via drill is 0.3 mm.
+        assert_eq!(geom.min_trace_width_mm, Some(0.2));
+        assert_eq!(geom.min_drill_mm, Some(0.3));
     }
 }
