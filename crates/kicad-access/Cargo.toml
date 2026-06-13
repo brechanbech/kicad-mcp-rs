@@ -1,0 +1,32 @@
+[package]
+name = "kicad-access"
+description = "Unified access layer over KiCad: live IPC, headless file parsing, and kicad-cli."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+# M-FEATURES-ADDITIVE: every feature only adds a backend; none changes existing items.
+# Default is the CLI backend because it has no extra build-time dependencies and only
+# needs the `kicad-cli` binary present at runtime. `files` and `ipc` are opt-in so a
+# bare `cargo check` doesn't pull the KiCad-specific crates.
+[features]
+default = ["cli"]
+cli = ["dep:tokio"]
+files = ["dep:kiutils-rs"]
+ipc = ["dep:kicad-ipc-rs", "dep:tokio"]
+full = ["cli", "files", "ipc"]
+
+[dependencies]
+thiserror.workspace = true
+tracing.workspace = true
+serde = { workspace = true }
+
+tokio = { workspace = true, optional = true }
+kiutils-rs = { workspace = true, optional = true }
+kicad-ipc-rs = { workspace = true, optional = true }

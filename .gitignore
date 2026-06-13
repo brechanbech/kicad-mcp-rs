@@ -1,0 +1,8 @@
+# Rust build artifacts
+/target
+
+# Backup files from rustfmt et al.
+**/*.rs.bk
+
+# macOS
+.DS_Store

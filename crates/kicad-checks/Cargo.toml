@@ -1,0 +1,20 @@
+[package]
+name = "kicad-checks"
+description = "Validation gates, DFM heuristics, and quality-gate reports for KiCad designs."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
+
+# Deliberately depends on NO KiCad crate. It operates on plain data passed in by the
+# caller, which keeps the logic sans-I/O and independently testable — and makes this
+# the single, clearly-bounded place where any ported third-party logic could live.
+# See ../../ATTRIBUTION.md.
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }

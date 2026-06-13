@@ -1,0 +1,41 @@
+[package]
+name = "kicad-mcp-server"
+description = "Model Context Protocol server for KiCad, in Rust."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "kicad-mcp-rs"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+# Backend features forward to kicad-access. Default is the CLI backend so a bare
+# `cargo run` works against just `kicad-cli`; opt into the others as your environment
+# gains a live KiCad (`ipc`) or you want headless file parsing (`files`).
+[features]
+default = ["cli"]
+cli = ["kicad-access/cli"]
+files = ["kicad-access/files"]
+ipc = ["kicad-access/ipc"]
+full = ["cli", "files", "ipc"]
+
+[dependencies]
+kicad-access = { workspace = true }
+kicad-checks = { workspace = true }
+
+rmcp = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+schemars = { workspace = true }
+
+# M-APP-ERROR: a binary may use anyhow rather than a canonical error type.
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

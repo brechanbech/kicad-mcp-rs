@@ -1,0 +1,62 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/kicad-access",
+    "crates/kicad-checks",
+    "crates/kicad-mcp-server",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+repository = "https://github.com/brechanbech/kicad-mcp-rs"
+authors = ["Stefan <stefan@example.com>"]
+
+# Shared dependency versions. Crates opt in via `dep.workspace = true`.
+[workspace.dependencies]
+# --- MCP ---
+rmcp = { version = "1.7", features = ["server", "macros", "transport-io"] }
+
+# --- KiCad access (optional, behind features in kicad-access) ---
+kicad-ipc-rs = "0.5"   # live IPC client (needs a running KiCad / kicad-cli api-server)
+kiutils-rs = "0.2"     # pure-Rust S-expression parsing for headless file ops
+
+# --- async / runtime ---
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std", "process", "signal"] }
+
+# --- (de)serialization & schema ---
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+schemars = "1"
+
+# --- errors / logging ---
+anyhow = "1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# Internal crates
+kicad-access = { path = "crates/kicad-access" }
+kicad-checks = { path = "crates/kicad-checks" }
+
+# M-STATIC-VERIFICATION: workspace-wide lint policy, inherited per-crate via `[lints] workspace = true`.
+[workspace.lints.rust]
+ambiguous_negative_literals = "warn"
+missing_debug_implementations = "warn"
+redundant_imports = "warn"
+redundant_lifetimes = "warn"
+trivial_numeric_casts = "warn"
+unsafe_op_in_unsafe_fn = "warn"
+unused_lifetimes = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# This project has no business doing anything unsafe; KiCad access is all IPC/file/CLI.
+undocumented_unsafe_blocks = "warn"
+
+# Faster, debuggable benches/profiles if you add criterion later (M-HOTPATH).
+[profile.release]
+debug = "line-tables-only"
