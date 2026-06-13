@@ -37,6 +37,8 @@ pub struct BoardGeometry {
     pub min_trace_width_mm: Option<f64>,
     /// Smallest drilled-hole (via or through-hole pad) diameter, or `None` if none.
     pub min_drill_mm: Option<f64>,
+    /// Thinnest annular ring (`(pad − drill) / 2`) on a plated hole, or `None` if none.
+    pub min_annular_ring_mm: Option<f64>,
 }
 
 /// Parses a `.kicad_pcb` and returns a high-level summary, without launching KiCad.
@@ -110,10 +112,31 @@ pub fn extract_geometry(path: impl AsRef<Path>) -> Result<BoardGeometry> {
         .filter_map(|p| p.drill.as_ref().and_then(|d| d.diameter));
     let min_drill_mm = min_positive(via_drills.chain(pad_drills));
 
+    // Annular ring exists only on plated holes: vias (round pad of `size`) and
+    // through-hole pads (use the pad's smaller dimension as a conservative outer).
+    let via_rings = ast
+        .vias
+        .iter()
+        .filter_map(|v| annular_ring(v.size, v.drill));
+    let pad_rings = ast.footprints.iter().flat_map(|f| &f.pads).filter_map(|p| {
+        let outer = p.size.map(|[w, h]| w.min(h));
+        let drill = p.drill.as_ref().and_then(|d| d.diameter);
+        annular_ring(outer, drill)
+    });
+    let min_annular_ring_mm = min_positive(via_rings.chain(pad_rings));
+
     Ok(BoardGeometry {
         min_trace_width_mm,
         min_drill_mm,
+        min_annular_ring_mm,
     })
+}
+
+/// Annular ring `(outer − drill) / 2` when both dimensions are present and the ring is
+/// positive; `None` otherwise (e.g. an SMD pad with no drill).
+fn annular_ring(outer_mm: Option<f64>, drill_mm: Option<f64>) -> Option<f64> {
+    let ring = (outer_mm? - drill_mm?) / 2.0;
+    (ring > 0.0).then_some(ring)
 }
 
 /// Smallest strictly-positive value in `it`, or `None` if it yields none.
@@ -152,10 +175,12 @@ mod tests {
     }
 
     #[test]
-    fn extracts_min_trace_and_drill() {
+    fn extracts_min_trace_drill_and_ring() {
         let geom = extract_geometry(fixture("two_resistor.kicad_pcb")).expect("parse fixture");
         // Tracks are 0.25 and 0.2 mm wide; the via drill is 0.3 mm.
         assert_eq!(geom.min_trace_width_mm, Some(0.2));
         assert_eq!(geom.min_drill_mm, Some(0.3));
+        // Via: (size 0.6 − drill 0.3) / 2 = 0.15 mm ring; SMD pads have none.
+        assert_eq!(geom.min_annular_ring_mm, Some(0.15));
     }
 }

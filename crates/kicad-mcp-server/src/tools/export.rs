@@ -31,21 +31,34 @@ pub async fn run_drc(cli: &KicadCli, params: RunDrcParams) -> Result<CallToolRes
 }
 
 /// Parameters for the `quality_gate` tool.
+// The DFM floors are consumed only by the geometry gates, which need the `files`
+// backend; in a cli-only build nothing reads them, but they stay in the advertised
+// tool schema. (`pcb_path` is always used, via `run_drc`.)
+#[cfg_attr(not(feature = "files"), allow(dead_code))]
 #[derive(Debug, Deserialize, JsonSchema)]
 pub struct QualityGateParams {
     /// Absolute path to the `.kicad_pcb` to gate.
     pub pcb_path: PathBuf,
     /// Fab minimum trace width in millimeters (DFM floor).
-    // Consumed only by the geometry gate, which needs the `files` backend; in a
-    // cli-only build nothing reads it, but it stays in the advertised tool schema.
-    #[cfg_attr(not(feature = "files"), allow(dead_code))]
     #[serde(default = "default_trace_floor")]
     pub min_trace_width_mm: f64,
+    /// Fab minimum drill diameter in millimeters (DFM floor).
+    #[serde(default = "default_drill_floor")]
+    pub min_drill_mm: f64,
+    /// Fab minimum annular ring in millimeters (DFM floor).
+    #[serde(default = "default_annular_floor")]
+    pub min_annular_ring_mm: f64,
 }
 
+// JLCPCB standard 2-layer capabilities; documented so changing one is deliberate.
 fn default_trace_floor() -> f64 {
-    // JLCPCB standard 2-layer capability; documented so changing it is a deliberate act.
     0.127
+}
+fn default_drill_floor() -> f64 {
+    0.2
+}
+fn default_annular_floor() -> f64 {
+    0.13
 }
 
 /// Runs DRC then DFM gates, returning an aggregated pass/fail [`QualityReport`].
@@ -73,24 +86,32 @@ pub async fn quality_gate(
 /// DFM gate outcomes from real board geometry, read via the headless `files` backend.
 #[cfg(feature = "files")]
 fn dfm_outcomes(params: &QualityGateParams) -> Result<Vec<GateOutcome>, McpError> {
-    use kicad_checks::dfm::{BoardGeometry, MinTraceWidth};
+    use kicad_checks::dfm::{BoardGeometry, MinAnnularRing, MinDrill, MinTraceWidth};
     use kicad_checks::gates::Gate as _;
 
     let geom = kicad_access::files::extract_geometry(&params.pcb_path).map_err(to_mcp)?;
+    // An absent measurement means the board has no feature of that kind; INFINITY
+    // makes the corresponding "must be ≥ floor" gate pass vacuously.
+    let geometry = BoardGeometry {
+        min_trace_width_mm: geom.min_trace_width_mm.unwrap_or(f64::INFINITY),
+        min_drill_mm: geom.min_drill_mm.unwrap_or(f64::INFINITY),
+        min_annular_ring_mm: geom.min_annular_ring_mm.unwrap_or(f64::INFINITY),
+    };
 
-    let mut outcomes = Vec::new();
-    if let Some(min_trace_width_mm) = geom.min_trace_width_mm {
-        let geometry = BoardGeometry {
-            min_trace_width_mm,
-            // No min-drill gate exists yet; a board with no drills must not fail one.
-            min_drill_mm: geom.min_drill_mm.unwrap_or(f64::INFINITY),
-        };
-        let gate = MinTraceWidth {
+    Ok(vec![
+        MinTraceWidth {
             floor_mm: params.min_trace_width_mm,
-        };
-        outcomes.push(gate.evaluate(&geometry));
-    }
-    Ok(outcomes)
+        }
+        .evaluate(&geometry),
+        MinDrill {
+            floor_mm: params.min_drill_mm,
+        }
+        .evaluate(&geometry),
+        MinAnnularRing {
+            floor_mm: params.min_annular_ring_mm,
+        }
+        .evaluate(&geometry),
+    ])
 }
 
 /// Without the `files` backend the board can't be parsed, so the geometry gates are
