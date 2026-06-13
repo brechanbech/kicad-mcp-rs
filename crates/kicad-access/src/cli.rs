@@ -68,7 +68,10 @@ impl KicadCli {
     /// Runs DRC on `pcb` and returns the raw JSON report `kicad-cli` produces.
     ///
     /// # Errors
-    /// Returns [`ErrorKind::Cli`] on spawn/exit failure.
+    /// Returns [`ErrorKind::Cli`] if the binary can't be spawned or DRC fails to run
+    /// (a malformed board, say). Note this does *not* fail just because the board has
+    /// violations: we deliberately omit `--exit-code-violations` so a board with DRC
+    /// errors still yields its report, which the caller parses to decide pass/fail.
     pub async fn run_drc(&self, pcb: &Path) -> Result<String> {
         // `--format json` keeps the output machine-parseable for kicad-checks.
         let out = self
@@ -77,7 +80,6 @@ impl KicadCli {
                 OsStr::new("drc"),
                 OsStr::new("--format"),
                 OsStr::new("json"),
-                OsStr::new("--exit-code-violations"),
                 pcb.as_os_str(),
             ])
             .await?;

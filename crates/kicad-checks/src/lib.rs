@@ -15,8 +15,10 @@
 //! original work. See the project `ATTRIBUTION.md`.
 
 pub mod dfm;
+pub mod drc;
 pub mod gates;
 pub mod report;
 
+pub use drc::DrcReport;
 pub use gates::{Gate, GateOutcome, Severity};
 pub use report::QualityReport;

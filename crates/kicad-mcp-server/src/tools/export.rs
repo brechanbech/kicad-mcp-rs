@@ -53,13 +53,14 @@ pub async fn quality_gate(
     cli: &KicadCli,
     params: QualityGateParams,
 ) -> Result<CallToolResult, McpError> {
-    // 1. Access layer: get the machine-readable DRC report. Parsing its violations
-    //    into gate outcomes is a later step; running it here surfaces spawn/exec
-    //    failures early and reserves the report for that work.
-    let _drc_json = cli.run_drc(&params.pcb_path).await.map_err(to_mcp)?;
+    // 1. Access layer: get the machine-readable DRC report.
+    let drc_json = cli.run_drc(&params.pcb_path).await.map_err(to_mcp)?;
 
-    // 2. Domain layer: DFM gates over geometry read from the board file.
-    let outcomes = dfm_outcomes(&params)?;
+    // 2. Domain layer: fold DRC findings, then DFM geometry gates, into one report.
+    let drc = kicad_checks::DrcReport::from_json(&drc_json)
+        .map_err(|e| McpError::internal_error(format!("could not parse DRC report: {e}"), None))?;
+    let mut outcomes = vec![drc.into_outcome()];
+    outcomes.extend(dfm_outcomes(&params)?);
 
     // 3. MCP result.
     let report = QualityReport::from_outcomes(outcomes);
