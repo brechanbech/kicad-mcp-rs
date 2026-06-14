@@ -103,17 +103,24 @@ cargo deny check          # cargo install cargo-deny
 
 ## Continuous integration
 
-[`.woodpecker.yml`](.woodpecker.yml) runs fmt, clippy (`-D warnings`), the tests, and
-`cargo deny` on the default and `--features files` builds — the headless path that
-needs no KiCad install. Enable it by activating the repo at
-[ci.codeberg.org](https://ci.codeberg.org). The `ipc` backend is validated locally
-instead (`cargo test -p kicad-access --features ipc -- --ignored live_version`),
-against a running KiCad 10 GUI; the `quality_gate` end-to-end test runs for real when
-`kicad-cli` is on `PATH` and skips otherwise.
+CI runs on [Codeberg CI](https://docs.codeberg.org/ci/) (Woodpecker).
+[`.woodpecker.yml`](.woodpecker.yml) runs `cargo fmt --check`, clippy (`-D warnings`),
+the tests, and `cargo deny` on the default and `--features files` builds — the
+headless path that needs no KiCad install. The `ipc` backend is excluded from CI (it
+pulls cmake/nng and can only be exercised against a live GUI); it's validated locally
+with `cargo test -p kicad-access --features ipc -- --ignored live_version`. The
+`quality_gate` end-to-end test runs for real when `kicad-cli` is on `PATH` and skips
+otherwise, so CI stays green without a KiCad install.
+
+Codeberg CI is **approval-gated and granted per user**: request access once by opening
+an issue at [`Codeberg-CI/request-access`](https://codeberg.org/Codeberg-CI/request-access)
+(link prior projects so it isn't taken for abuse), then enable this repo at
+[`ci.codeberg.org/repos/add`](https://ci.codeberg.org/repos/add). Until then the
+pipeline definition sits ready but does not run.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE). Dependency and any adapted-logic notices are in
+MIT — see [`LICENSE.md`](LICENSE.md). Dependency and any adapted-logic notices are in
 [`THIRD-PARTY-LICENSES.md`](THIRD-PARTY-LICENSES.md) and [`ATTRIBUTION.md`](ATTRIBUTION.md).
 KiCad itself (GPLv3) is not linked; all access is arm's-length (separate process /
 file parsing).
