@@ -87,8 +87,9 @@ Point your MCP client at the binary over stdio. Example client config:
 - **Version coupling.** The IPC proto surface tracks the KiCad major version. Align
   your installed KiCad, `kicad-ipc-rs`, and fixtures, or you'll get decode errors at
   runtime (not compile time). See `docs/architecture.md`.
-- **Verify dependency licenses.** `cargo deny check` enforces a permissive
-  allow-list (`deny.toml`); confirm `kiutils-rs`'s license fits before relying on it.
+- **Dependency licenses.** `cargo deny check` enforces a permissive allow-list
+  (`deny.toml`) and currently passes — the whole tree, `kiutils-rs` and
+  `kicad-ipc-rs` included, fits. CI keeps it that way.
 
 ## Quality checks
 
@@ -98,6 +99,16 @@ cargo clippy --workspace --all-targets --all-features
 cargo test --workspace
 cargo deny check          # cargo install cargo-deny
 ```
+
+## Continuous integration
+
+[`.woodpecker.yml`](.woodpecker.yml) runs fmt, clippy (`-D warnings`), the tests, and
+`cargo deny` on the default and `--features files` builds — the headless path that
+needs no KiCad install. Enable it by activating the repo at
+[ci.codeberg.org](https://ci.codeberg.org). The `ipc` backend is validated locally
+instead (`cargo test -p kicad-access --features ipc -- --ignored live_version`),
+against a running KiCad 10 GUI; the `quality_gate` end-to-end test runs for real when
+`kicad-cli` is on `PATH` and skips otherwise.
 
 ## License
 

@@ -131,3 +131,82 @@ fn dfm_outcomes(_params: &QualityGateParams) -> Result<Vec<GateOutcome>, McpErro
         ],
     }])
 }
+
+#[cfg(all(test, feature = "files"))]
+mod e2e {
+    use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    /// `true` if a `kicad-cli` is on `PATH`; tests that need it skip when it isn't
+    /// (e.g. CI), so the suite stays green without a KiCad install.
+    fn kicad_cli_present() -> bool {
+        std::process::Command::new("kicad-cli")
+            .arg("version")
+            .output()
+            .is_ok_and(|o| o.status.success())
+    }
+
+    /// Copies the committed fixture board into a fresh temp dir and returns its path,
+    /// so kicad-cli's project-local byproducts (`.kicad_prl`) land in temp, not the repo.
+    fn fixture_in_tempdir() -> std::path::PathBuf {
+        static SEQ: AtomicU64 = AtomicU64::new(0);
+        let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../kicad-access/tests/fixtures/two_resistor.kicad_pcb");
+        let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!("kicad-mcp-e2e-{}-{seq}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("create temp dir");
+        let dst = dir.join("two_resistor.kicad_pcb");
+        std::fs::copy(&src, &dst).expect("copy fixture");
+        dst
+    }
+
+    /// Real run of the whole `quality_gate` pipeline (cli DRC -> parse -> DFM gates)
+    /// against a live `kicad-cli`. The fixture has DRC violations, so it must fail.
+    #[tokio::test]
+    async fn quality_gate_runs_full_pipeline() {
+        if !kicad_cli_present() {
+            eprintln!("skipping quality_gate_runs_full_pipeline: kicad-cli not on PATH");
+            return;
+        }
+
+        let pcb = fixture_in_tempdir();
+        let params = QualityGateParams {
+            pcb_path: pcb.clone(),
+            min_trace_width_mm: 0.127,
+            min_drill_mm: 0.2,
+            min_annular_ring_mm: 0.13,
+        };
+        let result = quality_gate(&KicadCli::new(), params)
+            .await
+            .expect("quality_gate runs");
+
+        let text = result
+            .content
+            .first()
+            .and_then(|c| c.as_text())
+            .map(|t| t.text.clone())
+            .expect("text content in result");
+        let report: serde_json::Value = serde_json::from_str(&text).expect("report is JSON");
+
+        // The fixture board has DRC violations (a short + unconnected nets).
+        assert_eq!(report["passed"], serde_json::Value::Bool(false));
+        let gates: Vec<&str> = report["outcomes"]
+            .as_array()
+            .expect("outcomes array")
+            .iter()
+            .filter_map(|o| o["gate"].as_str())
+            .collect();
+        assert!(
+            gates.contains(&"drc"),
+            "expected a drc outcome, got {gates:?}"
+        );
+        assert!(
+            gates.iter().any(|g| g.starts_with("dfm.")),
+            "expected dfm gates, got {gates:?}"
+        );
+
+        if let Some(dir) = pcb.parent() {
+            let _ = std::fs::remove_dir_all(dir);
+        }
+    }
+}
