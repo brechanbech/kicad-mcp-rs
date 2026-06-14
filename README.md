@@ -5,11 +5,12 @@ in Rust. It lets an MCP client (Claude, etc.) inspect and validate KiCad PCB
 designs — DRC, design-for-manufacturability gates, headless board analysis — over
 the three ways Rust can reach KiCad.
 
-> Status: **skeleton**. The structure, wiring, and types are in place; the bodies
-> marked `TODO(impl)` are where the real KiCad calls go. It is laid out so that
-> `cargo check` is clean from the first clone (default build pulls only well-
-> established crates), and you opt into the KiCad-specific backends per environment.
-> See [`docs/roadmap.md`](docs/roadmap.md) for the build-out plan and ordering.
+> Status: **working**. All three backends are implemented and validated against
+> KiCad 10.0.3 — `files` (headless board summary + geometry), `cli` (DRC plus the
+> DFM quality gate, end-to-end), and `ipc` (live connection / version). `cargo check`
+> is clean from the first clone (the default build pulls only well-established
+> crates); opt into the KiCad-specific backends per environment. See
+> [`docs/roadmap.md`](docs/roadmap.md) for what's done and what's next.
 
 ## Layout
 
