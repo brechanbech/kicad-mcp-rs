@@ -34,8 +34,8 @@ cargo run -p kicad-mcp-server          # serves MCP over stdio
 # Add the headless file backend (no running KiCad needed):
 cargo run -p kicad-mcp-server --features files
 
-# Add the live IPC backend (needs KiCad running with the API server enabled,
-# or a `kicad-cli api-server`):
+# Add the live IPC backend (needs the KiCad 10 GUI running with the API server
+# enabled — Preferences > Plugins > IPC API):
 cargo run -p kicad-mcp-server --features ipc
 
 # Everything:
@@ -72,8 +72,11 @@ Point your MCP client at the binary over stdio. Example client config:
 ## Runtime prerequisites
 
 - `kicad-cli` on `PATH` (or construct `KicadCli::at(path)`) for the `cli` tools.
-- For `ipc`: KiCad 9+ running with the API server enabled (Preferences > Plugins),
-  or a headless `kicad-cli api-server`.
+- For `ipc`: the KiCad 10 GUI running with the API server enabled (Preferences >
+  Plugins > IPC API), with a board/project open. There is no headless `kicad-cli`
+  API server in KiCad 10, so unlike `files`/`cli` this backend needs the GUI. The
+  pinned `kicad-ipc-rs` targets the KiCad 10 protobuf surface — see the version
+  coupling note in `docs/architecture.md`.
 - On FreeBSD/macOS, `kicad-cli` is usually under `/usr/local/bin` or the app
   bundle; on FreeBSD install `cad/kicad` from ports.
 

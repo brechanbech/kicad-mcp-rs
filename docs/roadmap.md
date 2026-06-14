@@ -55,9 +55,9 @@ clearance. Each is a small `Gate` implementor with unit tests — the framework
 ## 5. `ipc::Kicad` — the live backend
 
 Wire the real `kicad-ipc-rs` client for `connect` / `version` in
-`kicad-access/src/ipc.rs`. Lower priority: needs a running KiCad (GUI with the API
-server enabled, or `kicad-cli api-server`) and is subject to the proto/version coupling
-documented in [`architecture.md`](architecture.md).
+`kicad-access/src/ipc.rs`. Needs the running KiCad 10 GUI with the API server enabled
+(no headless API server exists in KiCad 10) and is subject to the proto/version
+coupling documented in [`architecture.md`](architecture.md).
 
 ## 6. CI
 

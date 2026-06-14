@@ -5,8 +5,8 @@
 //! never has to care which one a given operation uses:
 //!
 //! - [`ipc`] — the official IPC API (protobuf over an NNG/UNIX socket) via the
-//!   `kicad-ipc-rs` crate. Requires a **running** KiCad instance (or a
-//!   `kicad-cli api-server`). PCB-editor scope. Feature `ipc`.
+//!   `kicad-ipc-rs` crate. Requires a **running** KiCad GUI with the API server
+//!   enabled (there is no headless server in KiCad 10). PCB-editor scope. Feature `ipc`.
 //! - [`files`] — headless, KiCad-free parsing of `.kicad_pcb` / `.kicad_pro` /
 //!   library tables via `kiutils-rs`. The only backend that works with no KiCad
 //!   process at all — the basis for CI / agent pipelines. Feature `files`.

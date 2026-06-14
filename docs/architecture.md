@@ -40,7 +40,7 @@ KiCad offers three surfaces, and they are not interchangeable:
 | Backend | Crate         | Needs KiCad running? | Scope                              |
 |---------|---------------|----------------------|------------------------------------|
 | `files` | `kiutils-rs`  | No                   | Parse `.kicad_pcb`/`.kicad_pro`/libs |
-| `ipc`   | `kicad-ipc-rs`| Yes (GUI or api-server) | Live PCB-editor inspection/edit  |
+| `ipc`   | `kicad-ipc-rs`| Yes (GUI, API server on) | Live PCB-editor inspection/edit  |
 | `cli`   | `kicad-cli`   | No (spawns the binary) | Plot, export, DRC, ERC           |
 
 The IPC API is protobuf over an NNG/UNIX socket — **not gRPC** — so tonic does not
@@ -50,10 +50,13 @@ plotting/exporting, which is precisely why `files` and `cli` exist alongside it.
 
 ## The headless angle (the "extend it" opportunity)
 
-Because `files` parses on disk and `cli` has a headless `kicad-cli api-server` mode,
-the server can run with **no KiCad GUI** at all — suitable for FreeBSD CI and agent
-pipelines. That is the differentiator over a GUI-coupled design: keep as much as
-possible on the `files` + `cli` path so the server is useful without a live session.
+Because `files` parses on disk and `cli` spawns `kicad-cli` (itself a headless,
+GUI-free binary), the server can run with **no KiCad GUI** at all — suitable for
+FreeBSD CI and agent pipelines. The `ipc` backend is the exception: KiCad 10 has no
+headless API-server mode (`kicad-cli` exposes no `api-server` subcommand), so live
+IPC requires the running GUI. That is the differentiator over a GUI-coupled design:
+keep as much as possible on the `files` + `cli` path so the server is useful without
+a live session.
 
 ## Version coupling (read before upgrading)
 
