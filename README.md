@@ -61,6 +61,13 @@ Point your MCP client at the binary over stdio. Example client config:
 }
 ```
 
+### Protocol version
+
+The server speaks **MCP `2025-11-25`** (the latest revision) by default and negotiates
+down to `2025-06-18`, `2025-03-26`, or `2024-11-05` for older clients. This tracks the
+pinned `rmcp = "1.7"` SDK: `get_info` advertises rmcp's latest known revision, so
+bumping `rmcp` is what adopts future MCP versions — no handler changes needed.
+
 ## Tools
 
 | Tool              | Backend | In default build | Notes                              |
