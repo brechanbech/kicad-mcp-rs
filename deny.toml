@@ -1,4 +1,7 @@
 [advisories]
+# RUSTSEC vulnerabilities are always denied by cargo-deny. On top of that: refuse
+# yanked releases, and flag unmaintained crates in our own dependency closure.
+unmaintained = "workspace"
 yanked = "deny"
 
 [licenses]

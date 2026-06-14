@@ -52,8 +52,10 @@ impl KicadCli {
     /// Exports Gerber files for `pcb` into `out_dir`.
     ///
     /// # Errors
-    /// Returns [`ErrorKind::Cli`] if the binary can't be spawned or exits non-zero.
+    /// Returns [`ErrorKind::File`] if `pcb` is not an existing file, or
+    /// [`ErrorKind::Cli`] if the binary can't be spawned or exits non-zero.
     pub async fn export_gerbers(&self, pcb: &Path, out_dir: &Path) -> Result<()> {
+        ensure_board_file(pcb)?;
         self.run([
             OsStr::new("pcb"),
             OsStr::new("export"),
@@ -69,11 +71,13 @@ impl KicadCli {
     /// Runs DRC on `pcb` and returns the raw JSON report `kicad-cli` produces.
     ///
     /// # Errors
-    /// Returns [`ErrorKind::Cli`] if the binary can't be spawned or DRC fails to run
-    /// (a malformed board, say). Note this does *not* fail just because the board has
+    /// Returns [`ErrorKind::File`] if `pcb` is not an existing file, or
+    /// [`ErrorKind::Cli`] if the binary can't be spawned or DRC fails to run (a
+    /// malformed board, say). Note this does *not* fail just because the board has
     /// violations: we deliberately omit `--exit-code-violations` so a board with DRC
     /// errors still yields its report, which the caller parses to decide pass/fail.
     pub async fn run_drc(&self, pcb: &Path) -> Result<String> {
+        ensure_board_file(pcb)?;
         // kicad-cli prints only a human summary to stdout and writes the report to a
         // file, so we must give it an explicit `-o` path and read that back rather than
         // capturing stdout. `--format json` keeps it machine-parseable for kicad-checks.
@@ -127,10 +131,44 @@ impl KicadCli {
     }
 }
 
+/// Rejects a path that is not an existing regular file before it reaches `kicad-cli`
+/// as a positional argument.
+///
+/// Hardening: the path is supplied by the MCP client, and a flag-like value (`--foo`)
+/// could be misparsed by `kicad-cli`'s argument parser as an option. A real board file
+/// can't look like a flag (absolute paths start with `/`), and this also turns a bad
+/// path into a clean error instead of a confusing CLI failure. We pass arguments via
+/// [`std::process::Command`] (no shell), so there is no shell-injection vector to begin
+/// with — this closes the remaining argument-injection one.
+fn ensure_board_file(pcb: &Path) -> Result<()> {
+    if pcb.is_file() {
+        Ok(())
+    } else {
+        tracing::warn!(target: "kicad.cli.path.reject", path = %pcb.display());
+        Err(Error::new(ErrorKind::File))
+    }
+}
+
 /// A process-unique temp path for a DRC report, so concurrent `run_drc` calls — and
 /// other processes — don't clobber each other's output.
 fn drc_report_path() -> PathBuf {
     static SEQ: AtomicU64 = AtomicU64::new(0);
     let seq = SEQ.fetch_add(1, Ordering::Relaxed);
     std::env::temp_dir().join(format!("kicad-mcp-drc-{}-{seq}.json", std::process::id()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Needs no kicad-cli: the path guard rejects before anything is spawned, so this
+    // runs in CI. A flag-like path is also not a file, so it's covered by the same gate.
+    #[tokio::test]
+    async fn run_drc_rejects_a_path_that_is_not_a_file() {
+        let err = KicadCli::new()
+            .run_drc(Path::new("/no/such/board-or---flag.kicad_pcb"))
+            .await
+            .unwrap_err();
+        assert_eq!(err.kind(), ErrorKind::File);
+    }
 }

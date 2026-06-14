@@ -43,6 +43,9 @@ kicad-checks = { path = "crates/kicad-checks" }
 
 # M-STATIC-VERIFICATION: workspace-wide lint policy, inherited per-crate via `[lints] workspace = true`.
 [workspace.lints.rust]
+# This project reaches KiCad over IPC / files / CLI — there is no reason to write
+# `unsafe`, so forbid it outright (stronger than `deny`: an inner `allow` can't undo it).
+unsafe_code = "forbid"
 ambiguous_negative_literals = "warn"
 missing_debug_implementations = "warn"
 redundant_imports = "warn"

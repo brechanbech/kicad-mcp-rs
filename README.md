@@ -133,6 +133,15 @@ otherwise, so CI stays green without a KiCad install.
 
 The local [`.githooks/pre-push`](.githooks) hook runs the same gates before every push.
 
+## Security
+
+See [`SECURITY.md`](SECURITY.md) for the trust model and how to report issues. In short:
+this is a local, unauthenticated stdio server that runs with your privileges; tool
+outputs are **untrusted, board-derived text** (treat them as data, not instructions —
+indirect prompt injection is the client/model's concern, not something a server can
+sanitize away); board paths are validated and arguments are passed without a shell; and
+`unsafe` is forbidden workspace-wide.
+
 ## License
 
 MIT — see [`LICENSE.md`](LICENSE.md). Dependency and any adapted-logic notices are in
