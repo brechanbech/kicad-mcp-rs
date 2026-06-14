@@ -101,6 +101,15 @@ cargo test --workspace
 cargo deny check          # cargo install cargo-deny
 ```
 
+A tracked pre-push hook in [`.githooks/`](.githooks) runs the same gates as CI before
+every push (it skips `cargo deny` if the tool isn't installed). Enable it once per clone:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+Bypass it for a work-in-progress push with `git push --no-verify`.
+
 ## Continuous integration
 
 CI runs on [Codeberg CI](https://docs.codeberg.org/ci/) (Woodpecker).
