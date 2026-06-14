@@ -1,5 +1,5 @@
 #!/bin/sh
-# Pre-push gate: mirrors Codeberg CI (.woodpecker.yml) so a green push stays green in
+# Pre-push gate: mirrors CI (.forgejo/workflows/ci.yml) so a green push stays green in
 # CI. POSIX sh for portability (macOS/FreeBSD). Bypass in a pinch with
 # `git push --no-verify`.
 #

@@ -1,5 +1,7 @@
 # kicad-mcp-rs
 
+[![CI](https://codeberg.org/brechanbech/kicad-mcp-rs/actions/workflows/ci.yml/badge.svg)](https://codeberg.org/brechanbech/kicad-mcp-rs/actions)
+
 A Model Context Protocol (MCP) server for [KiCad](https://www.kicad.org/), written
 in Rust. It lets an MCP client (Claude, etc.) inspect and validate KiCad PCB
 designs — DRC, design-for-manufacturability gates, headless board analysis — over
@@ -119,20 +121,17 @@ Bypass it for a work-in-progress push with `git push --no-verify`.
 
 ## Continuous integration
 
-CI runs on [Codeberg CI](https://docs.codeberg.org/ci/) (Woodpecker).
-[`.woodpecker.yml`](.woodpecker.yml) runs `cargo fmt --check`, clippy (`-D warnings`),
-the tests, and `cargo deny` on the default and `--features files` builds — the
-headless path that needs no KiCad install. The `ipc` backend is excluded from CI (it
-pulls cmake/nng and can only be exercised against a live GUI); it's validated locally
-with `cargo test -p kicad-access --features ipc -- --ignored live_version`. The
+CI runs on Codeberg's native [Forgejo Actions](https://forgejo.org/docs/latest/user/actions/).
+[`.forgejo/workflows/ci.yml`](.forgejo/workflows/ci.yml) runs `cargo fmt --check`,
+clippy (`-D warnings`), the tests, and `cargo deny` on the default and `--features
+files` builds — the headless path that needs no KiCad install — on Codeberg's hosted
+runners. The `ipc` backend is excluded from CI (it pulls cmake/nng and can only be
+exercised against a live GUI); it's validated locally with
+`cargo test -p kicad-access --features ipc -- --ignored live_version`. The
 `quality_gate` end-to-end test runs for real when `kicad-cli` is on `PATH` and skips
 otherwise, so CI stays green without a KiCad install.
 
-Codeberg CI is **approval-gated and granted per user**: request access once by opening
-an issue at [`Codeberg-CI/request-access`](https://codeberg.org/Codeberg-CI/request-access)
-(link prior projects so it isn't taken for abuse), then enable this repo at
-[`ci.codeberg.org/repos/add`](https://ci.codeberg.org/repos/add). Until then the
-pipeline definition sits ready but does not run.
+The local [`.githooks/pre-push`](.githooks) hook runs the same gates before every push.
 
 ## License
 

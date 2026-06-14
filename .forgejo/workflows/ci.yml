@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    # Codeberg's hosted runners advertise codeberg-tiny|small|medium (not "docker",
+    # which only matches a self-hosted runner). medium gives a 10-min window — ample
+    # for the first, uncached pull of the Rust image and the workspace build.
+    runs-on: codeberg-medium
+    container:
+      # rust-toolchain.toml pins channel "stable" with rustfmt + clippy, so the image
+      # tag just supplies the base + git; the toolchain file installs stable on first
+      # cargo use. We build only the headless path (default + files) — `ipc` needs
+      # cmake/nng and a live GUI, so it's validated locally, not here.
+      image: rust:latest
+    env:
+      CARGO_TERM_COLOR: always
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - name: Checkout
+        # The rust image has no Node, and Codeberg's runner doesn't inject one into
+        # custom job containers, so the JS-based actions/checkout can't run. Clone
+        # manually with the git that ships in the image instead.
+        run: |
+          git config --global --add safe.directory '*'
+          git init -q .
+          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+          git -c protocol.version=2 fetch -q --depth 1 origin "$GITHUB_SHA"
+          git checkout -q FETCH_HEAD
+      - name: Toolchain
+        run: rustc --version && cargo --version
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy (default build)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Clippy (--features files)
+        run: cargo clippy --workspace --all-targets --features kicad-mcp-server/files -- -D warnings
+      - name: Test (default build)
+        run: cargo test --workspace
+      - name: Test (--features files)
+        # Includes the kicad-cli-gated e2e test, which skips when kicad-cli is absent.
+        run: |
+          cargo test -p kicad-access --features files
+          cargo test -p kicad-mcp-server --features files
+
+  deny:
+    # Separate job so building the cargo-deny binary gets its own time window.
+    runs-on: codeberg-medium
+    container:
+      image: rust:latest
+    steps:
+      - name: Checkout
+        run: |
+          git config --global --add safe.directory '*'
+          git init -q .
+          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+          git -c protocol.version=2 fetch -q --depth 1 origin "$GITHUB_SHA"
+          git checkout -q FETCH_HEAD
+      - name: cargo deny
+        run: |
+          cargo install cargo-deny --locked
+          cargo deny check

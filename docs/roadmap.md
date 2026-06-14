@@ -23,15 +23,16 @@ so it led. The live `ipc` backend, which needs the running GUI, came last.
   helper. Clearance is intentionally left to DRC, not reimplemented.
 - **5 — Live `ipc` backend.** `ipc::Kicad` over `kicad-ipc-rs` (`connect` / `version`),
   validated live against a running KiCad 10 GUI via the `#[ignore]d` `live_version` test.
-- **6 — CI.** Codeberg/Woodpecker pipeline (fmt / clippy / test / deny on default and
-  `--features files`), plus a `kicad-cli`-gated end-to-end `quality_gate` test.
+- **6 — CI.** Codeberg Forgejo Actions pipeline ([`.forgejo/workflows/ci.yml`](../.forgejo/workflows/ci.yml):
+  fmt / clippy / test / deny on default and `--features files`), plus a
+  `kicad-cli`-gated end-to-end `quality_gate` test, mirrored by a local pre-push hook.
 
 ## What's next
 
 Nothing is blocking; these are directions, roughly by value.
 
-- **Activate Codeberg CI** — a one-time enable of the repo at
-  [ci.codeberg.org](https://ci.codeberg.org) so `.woodpecker.yml` actually runs.
+- **Confirm CI is green** — Forgejo Actions runs on push automatically; if it doesn't
+  trigger, enable Actions in the repo's Settings.
 - **More gates** — board-outline / edge clearance, silkscreen-over-pad, courtyard
   presence, net-count sanity. The `Gate` framework is there to populate.
 - **More tools** — expose `summarize_board` geometry, ERC, and the `cli` export paths
