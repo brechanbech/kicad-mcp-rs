@@ -6,3 +6,8 @@
 
 # macOS
 .DS_Store
+
+# KiCad byproducts: kicad-cli writes a project-local settings file next to any board
+# it loads, and a default DRC report if run without an explicit output path.
+*.kicad_prl
+*-drc.json

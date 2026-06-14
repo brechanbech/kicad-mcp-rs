@@ -24,7 +24,7 @@ kicad-ipc-rs = "0.5"   # live IPC client (needs a running KiCad / kicad-cli api-
 kiutils-rs = "0.2"     # pure-Rust S-expression parsing for headless file ops
 
 # --- async / runtime ---
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std", "process", "signal"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std", "process", "signal", "fs"] }
 
 # --- (de)serialization & schema ---
 serde = { version = "1", features = ["derive"] }

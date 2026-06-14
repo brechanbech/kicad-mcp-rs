@@ -11,6 +11,7 @@
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::process::Output;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::{Error, ErrorKind, Result};
 
@@ -73,17 +74,31 @@ impl KicadCli {
     /// violations: we deliberately omit `--exit-code-violations` so a board with DRC
     /// errors still yields its report, which the caller parses to decide pass/fail.
     pub async fn run_drc(&self, pcb: &Path) -> Result<String> {
-        // `--format json` keeps the output machine-parseable for kicad-checks.
-        let out = self
+        // kicad-cli prints only a human summary to stdout and writes the report to a
+        // file, so we must give it an explicit `-o` path and read that back rather than
+        // capturing stdout. `--format json` keeps it machine-parseable for kicad-checks.
+        let out_path = drc_report_path();
+        let run = self
             .run([
                 OsStr::new("pcb"),
                 OsStr::new("drc"),
                 OsStr::new("--format"),
                 OsStr::new("json"),
+                OsStr::new("-o"),
+                out_path.as_os_str(),
                 pcb.as_os_str(),
             ])
-            .await?;
-        Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+            .await;
+
+        let report = match run {
+            Ok(_) => tokio::fs::read_to_string(&out_path)
+                .await
+                .map_err(|e| Error::with_source(ErrorKind::Cli, e)),
+            Err(e) => Err(e),
+        };
+        // Best-effort cleanup; the report is already in memory, or the run failed.
+        let _ = tokio::fs::remove_file(&out_path).await;
+        report
     }
 
     /// Spawns `kicad-cli` with `args`, capturing output.
@@ -110,4 +125,12 @@ impl KicadCli {
             Err(Error::new(ErrorKind::Cli))
         }
     }
+}
+
+/// A process-unique temp path for a DRC report, so concurrent `run_drc` calls — and
+/// other processes — don't clobber each other's output.
+fn drc_report_path() -> PathBuf {
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+    std::env::temp_dir().join(format!("kicad-mcp-drc-{}-{seq}.json", std::process::id()))
 }
