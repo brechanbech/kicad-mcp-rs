@@ -29,7 +29,9 @@ so it led. The live `ipc` backend, which needs the running GUI, came last.
 
 ## What's next
 
-Nothing is blocking; these are directions, roughly by value.
+The major forward plan — project setup, schematic editing, and PCB inspection & edits,
+plus the native Rust `.kicad_sch` editor those depend on — is in
+[`expansion-plan.md`](expansion-plan.md). Smaller near-term items:
 
 - **Confirm CI is green** — Forgejo Actions runs on push automatically; if it doesn't
   trigger, enable Actions in the repo's Settings.
