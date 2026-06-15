@@ -433,7 +433,7 @@ dependencies = [
 [[package]]
 name = "kicad-sch-rs"
 version = "0.1.0"
-source = "git+https://codeberg.org/brechanbech/kicad-sch-rs.git#5d887996c7bab33a960be6de1a9547a454abaa84"
+source = "git+https://codeberg.org/brechanbech/kicad-sch-rs.git#9f2154daa7c171ffadcbc4112ab6e2a7c6f7fda5"
 dependencies = [
  "kiutils_sexpr",
  "uuid",

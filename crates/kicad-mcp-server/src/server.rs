@@ -135,6 +135,17 @@ impl KicadMcp {
         tools::schematic::annotate_schematic(params).await
     }
 
+    /// Places a new symbol instance (of a `lib_id` already defined in the sheet) and saves.
+    #[tool(
+        description = "Place a new symbol (lib_id must already be in the sheet's lib_symbols) at x/y in a .kicad_sch, and save"
+    )]
+    async fn place_symbol(
+        &self,
+        Parameters(params): Parameters<tools::schematic::PlaceSymbolParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::place_symbol(params).await
+    }
+
     /// Sets or inserts a property on a symbol and saves the result.
     #[tool(description = "Set or insert a property on a symbol in a .kicad_sch and save")]
     async fn set_schematic_property(

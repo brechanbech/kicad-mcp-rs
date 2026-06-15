@@ -83,8 +83,9 @@ bumping `rmcp` is what adopts future MCP versions — no handler changes needed.
 | `quality_gate`    | cli + checks | yes         | DRC + DFM gates → pass/fail; DFM geometry needs `--features files` |
 | `summarize_board` | files   | `--features files` | Footprints/nets/layers, headless |
 | `kicad_version`   | ipc     | `--features ipc` | Smoke test of the live connection  |
-| `summarize_schematic`   | schematic | `--features schematic` | Symbols, nets, element counts, headless |
+| `summarize_schematic`   | schematic | `--features schematic` | Symbols, nets, counts, placeable lib_symbols, headless |
 | `annotate_schematic`    | schematic | `--features schematic` | Assign references to unannotated symbols, save |
+| `place_symbol`          | schematic | `--features schematic` | Place a new symbol (lib_id already in the sheet) at x/y, save |
 | `set_schematic_property`| schematic | `--features schematic` | Set/insert a symbol property, save |
 | `route_schematic_wire`  | schematic | `--features schematic` | Auto-route an orthogonal wire (by x/y) around symbol bodies, save |
 | `list_symbol_pins`      | schematic | `--features schematic` | A symbol's pins: number, name, x/y connection point |

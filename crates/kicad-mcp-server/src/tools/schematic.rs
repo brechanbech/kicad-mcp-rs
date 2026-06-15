@@ -72,6 +72,8 @@ struct SchematicSummary {
     no_connects: usize,
     components: Vec<SymbolSummary>,
     nets: Vec<String>,
+    /// Library symbol ids defined in the sheet — the set `place_symbol` may instantiate.
+    lib_symbols: Vec<String>,
 }
 
 /// Parses the schematic from disk and returns a JSON summary of its elements.
@@ -100,6 +102,7 @@ pub async fn summarize_schematic(
             })
             .collect(),
         nets: sch.labels().into_iter().map(|l| l.text).collect(),
+        lib_symbols: sch.lib_symbol_ids(),
     };
     json_result(&summary)
 }
@@ -135,6 +138,73 @@ pub async fn annotate_schematic(
         annotated,
         written_to,
     })
+}
+
+// --- place symbol (edit) ---
+
+/// Parameters for the `place_symbol` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct PlaceSymbolParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// Library id to instantiate, e.g. `Device:R`. Must already be in the sheet's
+    /// `lib_symbols` (see `summarize_schematic`'s `lib_symbols` for what's available).
+    pub lib_id: String,
+    /// Reference for the new symbol, e.g. `R5`. Use `R?`-style if you intend to annotate.
+    pub reference: String,
+    /// Value, e.g. `10k`.
+    pub value: String,
+    /// X position (mm).
+    pub x: f64,
+    /// Y position (mm).
+    pub y: f64,
+    /// Rotation in degrees (0/90/180/270). Defaults to 0.
+    #[serde(default)]
+    pub angle: f64,
+    /// Where to write the result. Defaults to overwriting `sch_path` in place.
+    #[serde(default)]
+    pub output_path: Option<PathBuf>,
+}
+
+/// Outcome of a `place_symbol` call.
+#[derive(Debug, Serialize)]
+struct PlaceResult {
+    /// UUID of the newly placed symbol instance.
+    uuid: String,
+    written_to: PathBuf,
+}
+
+/// Places a new symbol instance and writes the result. Validates that `lib_id` is defined
+/// in the sheet first, so the failure is a clear message rather than a silent no-op.
+#[allow(clippy::unused_async)]
+pub async fn place_symbol(params: PlaceSymbolParams) -> Result<CallToolResult, McpError> {
+    let mut sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+
+    let available = sch.lib_symbol_ids();
+    if !available.contains(&params.lib_id) {
+        return Err(McpError::invalid_params(
+            format!(
+                "lib_id '{}' is not defined in this sheet's lib_symbols; available: [{}]",
+                params.lib_id,
+                available.join(", ")
+            ),
+            None,
+        ));
+    }
+
+    let uuid = sch
+        .place_symbol(
+            &params.lib_id,
+            &params.reference,
+            &params.value,
+            params.x,
+            params.y,
+            params.angle,
+        )
+        .map_err(to_mcp)?
+        .ok_or_else(|| McpError::internal_error("symbol placement failed unexpectedly", None))?;
+    let written_to = write_back(&sch, &params.sch_path, params.output_path)?;
+    json_result(&PlaceResult { uuid, written_to })
 }
 
 // --- set property (edit) ---
