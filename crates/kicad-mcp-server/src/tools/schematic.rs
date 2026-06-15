@@ -235,23 +235,120 @@ pub async fn route_schematic_wire(
         x: params.end_x,
         y: params.end_y,
     };
-    let result = match sch.route_wire(start, end).map_err(to_mcp)? {
-        Some(corners) => {
-            let written_to = write_back(&sch, &params.sch_path, params.output_path)?;
-            RouteResult {
-                routed: true,
-                corners: corners
-                    .into_iter()
-                    .map(|p| RoutePoint { x: p.x, y: p.y })
-                    .collect(),
-                written_to: Some(written_to),
-            }
-        }
+    let result = route_and_write(&mut sch, start, end, &params.sch_path, params.output_path)?;
+    json_result(&result)
+}
+
+/// Routes `start` → `end`, writing the schematic back when a route is found, and builds the
+/// shared [`RouteResult`]. Shared by the coordinate- and pin-addressed routing tools.
+fn route_and_write(
+    sch: &mut Schematic,
+    start: Point,
+    end: Point,
+    input: &Path,
+    output: Option<PathBuf>,
+) -> Result<RouteResult, McpError> {
+    Ok(match sch.route_wire(start, end).map_err(to_mcp)? {
+        Some(corners) => RouteResult {
+            routed: true,
+            corners: corners
+                .into_iter()
+                .map(|p| RoutePoint { x: p.x, y: p.y })
+                .collect(),
+            written_to: Some(write_back(sch, input, output)?),
+        },
         None => RouteResult {
             routed: false,
             corners: Vec::new(),
             written_to: None,
         },
-    };
+    })
+}
+
+// --- pins (read + pin-addressed routing) ---
+
+/// Parameters for the `list_symbol_pins` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct ListSymbolPinsParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// Reference of the symbol whose pins to list, e.g. `U1`.
+    pub reference: String,
+}
+
+/// One pin in a `list_symbol_pins` result — its sheet connection point (where a wire
+/// attaches) is `(x, y)`.
+#[derive(Debug, Serialize)]
+struct PinInfo {
+    number: String,
+    name: String,
+    x: f64,
+    y: f64,
+}
+
+/// Lists a symbol's pins with their sheet connection points, for discovering the pin
+/// numbers to pass to `route_wire_between_pins`.
+#[allow(clippy::unused_async)]
+pub async fn list_symbol_pins(params: ListSymbolPinsParams) -> Result<CallToolResult, McpError> {
+    let sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+    if !sch
+        .symbols()
+        .iter()
+        .any(|s| s.reference.as_deref() == Some(&params.reference))
+    {
+        return Err(McpError::invalid_params(
+            format!("no symbol with reference {}", params.reference),
+            None,
+        ));
+    }
+    let pins: Vec<PinInfo> = sch
+        .symbol_pins(&params.reference)
+        .into_iter()
+        .map(|p| PinInfo {
+            number: p.number,
+            name: p.name,
+            x: p.at.x,
+            y: p.at.y,
+        })
+        .collect();
+    json_result(&pins)
+}
+
+/// Parameters for the `route_wire_between_pins` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct RouteBetweenPinsParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// Reference of the start symbol, e.g. `R1`.
+    pub from_reference: String,
+    /// Pin number on the start symbol, e.g. `1`.
+    pub from_pin: String,
+    /// Reference of the end symbol, e.g. `C3`.
+    pub to_reference: String,
+    /// Pin number on the end symbol, e.g. `2`.
+    pub to_pin: String,
+    /// Where to write the result. Defaults to overwriting `sch_path` in place.
+    #[serde(default)]
+    pub output_path: Option<PathBuf>,
+}
+
+/// Resolves a `(reference, pin number)` to its sheet connection point, or a clear
+/// `invalid_params` error naming what was missing.
+fn resolve_pin(sch: &Schematic, reference: &str, pin: &str) -> Result<Point, McpError> {
+    sch.pin_position(reference, pin).ok_or_else(|| {
+        McpError::invalid_params(format!("no pin {pin} on symbol {reference}"), None)
+    })
+}
+
+/// Auto-routes a wire between two symbols' pins (addressed by reference + pin number),
+/// writing the result when a route is found.
+#[allow(clippy::unused_async)]
+pub async fn route_wire_between_pins(
+    params: RouteBetweenPinsParams,
+) -> Result<CallToolResult, McpError> {
+    let mut sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+    let start = resolve_pin(&sch, &params.from_reference, &params.from_pin)?;
+    let end = resolve_pin(&sch, &params.to_reference, &params.to_pin)?;
+    let result = route_and_write(&mut sch, start, end, &params.sch_path, params.output_path)?;
     json_result(&result)
 }

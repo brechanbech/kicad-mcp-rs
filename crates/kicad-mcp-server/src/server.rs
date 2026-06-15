@@ -154,6 +154,28 @@ impl KicadMcp {
     ) -> Result<CallToolResult, McpError> {
         tools::schematic::route_schematic_wire(params).await
     }
+
+    /// Lists a symbol's pins with their sheet connection points.
+    #[tool(
+        description = "List a symbol's pins (number, name, x/y connection point) in a .kicad_sch"
+    )]
+    async fn list_symbol_pins(
+        &self,
+        Parameters(params): Parameters<tools::schematic::ListSymbolPinsParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::list_symbol_pins(params).await
+    }
+
+    /// Auto-routes a wire between two symbols' pins (by reference + pin number), and saves.
+    #[tool(
+        description = "Auto-route a wire between two pins (by symbol reference + pin number) around symbol bodies, and save"
+    )]
+    async fn route_wire_between_pins(
+        &self,
+        Parameters(params): Parameters<tools::schematic::RouteBetweenPinsParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::route_wire_between_pins(params).await
+    }
 }
 
 impl Default for KicadMcp {

@@ -86,7 +86,9 @@ bumping `rmcp` is what adopts future MCP versions — no handler changes needed.
 | `summarize_schematic`   | schematic | `--features schematic` | Symbols, nets, element counts, headless |
 | `annotate_schematic`    | schematic | `--features schematic` | Assign references to unannotated symbols, save |
 | `set_schematic_property`| schematic | `--features schematic` | Set/insert a symbol property, save |
-| `route_schematic_wire`  | schematic | `--features schematic` | Auto-route an orthogonal wire around symbol bodies, save |
+| `route_schematic_wire`  | schematic | `--features schematic` | Auto-route an orthogonal wire (by x/y) around symbol bodies, save |
+| `list_symbol_pins`      | schematic | `--features schematic` | A symbol's pins: number, name, x/y connection point |
+| `route_wire_between_pins`| schematic | `--features schematic` | Auto-route a wire between two pins (by reference + pin number), save |
 
 The `schematic` tools edit the file in place unless an `output_path` is given, and
 preserve every untouched byte (formatting, comments, unknown tokens) via
