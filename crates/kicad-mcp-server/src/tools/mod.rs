@@ -12,6 +12,8 @@ pub mod board;
 pub mod export;
 #[cfg(feature = "files")]
 pub mod project;
+#[cfg(feature = "schematic")]
+pub mod schematic;
 
 /// Maps an access-layer error into an MCP protocol error.
 ///

@@ -22,6 +22,9 @@ rmcp = { version = "1.7", features = ["server", "macros", "transport-io"] }
 # --- KiCad access (optional, behind features in kicad-access) ---
 kicad-ipc-rs = "0.5"   # live IPC client (needs a running KiCad / kicad-cli api-server)
 kiutils-rs = "0.2"     # pure-Rust S-expression parsing for headless file ops
+# Headless .kicad_sch read/edit (annotate, bulk property edits, wire routing). Public on
+# Codeberg, so it resolves anonymously for both local builds and CI.
+kicad-sch-rs = { git = "https://codeberg.org/brechanbech/kicad-sch-rs.git" }
 
 # --- async / runtime ---
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "io-std", "process", "signal", "fs"] }

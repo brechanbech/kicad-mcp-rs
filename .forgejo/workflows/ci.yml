@@ -15,8 +15,8 @@ jobs:
     container:
       # rust-toolchain.toml pins channel "stable" with rustfmt + clippy, so the image
       # tag just supplies the base + git; the toolchain file installs stable on first
-      # cargo use. We build only the headless path (default + files) — `ipc` needs
-      # cmake/nng and a live GUI, so it's validated locally, not here.
+      # cargo use. We build the headless paths (default + files + schematic) — `ipc`
+      # needs cmake/nng and a live GUI, so it's validated locally, not here.
       image: rust:latest
     env:
       CARGO_TERM_COLOR: always
@@ -40,6 +40,9 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Clippy (--features files)
         run: cargo clippy --workspace --all-targets --features kicad-mcp-server/files -- -D warnings
+      - name: Clippy (--features schematic)
+        # Headless .kicad_sch read/edit; pulls the public kicad-sch-rs over git.
+        run: cargo clippy -p kicad-mcp-server --all-targets --features schematic -- -D warnings
       - name: Test (default build)
         run: cargo test --workspace
       - name: Test (--features files)
@@ -47,6 +50,8 @@ jobs:
         run: |
           cargo test -p kicad-access --features files
           cargo test -p kicad-mcp-server --features files
+      - name: Test (--features schematic)
+        run: cargo test -p kicad-mcp-server --features schematic
 
   deny:
     # Separate job so building the cargo-deny binary gets its own time window.
@@ -62,6 +67,8 @@ jobs:
           git -c protocol.version=2 fetch -q --depth 1 origin "$GITHUB_SHA"
           git checkout -q FETCH_HEAD
       - name: cargo deny
+        # --all-features so the schematic backend's dependency tree (and its git source)
+        # is validated too, not just the default build.
         run: |
           cargo install cargo-deny --locked
-          cargo deny check
+          cargo deny --all-features check

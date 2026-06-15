@@ -4,13 +4,15 @@
 
 A Model Context Protocol (MCP) server for [KiCad](https://www.kicad.org/), written
 in Rust. It lets an MCP client (Claude, etc.) inspect and validate KiCad PCB
-designs — DRC, design-for-manufacturability gates, headless board analysis — over
-the three ways Rust can reach KiCad.
+designs — DRC, design-for-manufacturability gates, headless board analysis — and
+**read and edit schematics** headlessly, over the ways Rust can reach KiCad.
 
-> Status: **working**. All three backends are implemented and validated against
-> KiCad 10.0.3 — `files` (headless board summary + geometry), `cli` (DRC plus the
-> DFM quality gate, end-to-end), and `ipc` (live connection / version). `cargo check`
-> is clean from the first clone (the default build pulls only well-established
+> Status: **working**. Four backends, validated against KiCad 10.0.3 — `files`
+> (headless board summary + geometry), `cli` (DRC plus the DFM quality gate,
+> end-to-end), `ipc` (live connection / version), and `schematic` (headless
+> `.kicad_sch` read/edit — summarize, annotate, set properties, auto-route wires —
+> backed by [`kicad-sch-rs`](https://codeberg.org/brechanbech/kicad-sch-rs)). `cargo
+> check` is clean from the first clone (the default build pulls only well-established
 > crates); opt into the KiCad-specific backends per environment. See
 > [`docs/roadmap.md`](docs/roadmap.md) for what's done and what's next.
 
@@ -40,6 +42,9 @@ cargo run -p kicad-mcp-server --features files
 # Add the live IPC backend (needs the KiCad 10 GUI running with the API server
 # enabled — Preferences > Plugins > IPC API):
 cargo run -p kicad-mcp-server --features ipc
+
+# Add the headless schematic read/edit backend (no running KiCad needed):
+cargo run -p kicad-mcp-server --features schematic
 
 # Everything:
 cargo run -p kicad-mcp-server --features full
@@ -78,6 +83,14 @@ bumping `rmcp` is what adopts future MCP versions — no handler changes needed.
 | `quality_gate`    | cli + checks | yes         | DRC + DFM gates → pass/fail; DFM geometry needs `--features files` |
 | `summarize_board` | files   | `--features files` | Footprints/nets/layers, headless |
 | `kicad_version`   | ipc     | `--features ipc` | Smoke test of the live connection  |
+| `summarize_schematic`   | schematic | `--features schematic` | Symbols, nets, element counts, headless |
+| `annotate_schematic`    | schematic | `--features schematic` | Assign references to unannotated symbols, save |
+| `set_schematic_property`| schematic | `--features schematic` | Set/insert a symbol property, save |
+| `route_schematic_wire`  | schematic | `--features schematic` | Auto-route an orthogonal wire around symbol bodies, save |
+
+The `schematic` tools edit the file in place unless an `output_path` is given, and
+preserve every untouched byte (formatting, comments, unknown tokens) via
+`kicad-sch-rs`'s lossless splice model — no running KiCad or `kicad-cli` needed.
 
 ## Runtime prerequisites
 

@@ -15,15 +15,19 @@ cargo clippy --workspace --all-targets -- -D warnings
 echo "pre-push: clippy (--features files)"
 cargo clippy --workspace --all-targets --features kicad-mcp-server/files -- -D warnings
 
+echo "pre-push: clippy (--features schematic)"
+cargo clippy -p kicad-mcp-server --all-targets --features schematic -- -D warnings
+
 echo "pre-push: tests"
 cargo test --workspace --quiet
 cargo test -p kicad-access --features files --quiet
 cargo test -p kicad-mcp-server --features files --quiet
+cargo test -p kicad-mcp-server --features schematic --quiet
 
 # cargo deny is part of CI but optional locally; run it only if installed.
 if command -v cargo-deny >/dev/null 2>&1; then
 	echo "pre-push: cargo deny"
-	cargo deny check
+	cargo deny --all-features check
 else
 	echo "pre-push: skipping cargo deny (cargo-deny not installed)"
 fi
