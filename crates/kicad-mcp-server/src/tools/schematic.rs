@@ -140,6 +140,67 @@ pub async fn annotate_schematic(
     })
 }
 
+// --- import library symbol (edit) ---
+
+/// Parameters for the `import_lib_symbol` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct ImportLibSymbolParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// Absolute path to the `.kicad_sym` library file to import from.
+    pub library_path: PathBuf,
+    /// Library id to import, e.g. `Device:R` or `Amplifier_Operational:OPA197xD`. The part
+    /// after `:` is the symbol's name in the library file.
+    pub lib_id: String,
+    /// Where to write the result. Defaults to overwriting `sch_path` in place.
+    #[serde(default)]
+    pub output_path: Option<PathBuf>,
+}
+
+/// Outcome of an `import_lib_symbol` call.
+#[derive(Debug, Serialize)]
+struct ImportResult {
+    /// `false` if the definition was already present (no write needed).
+    imported: bool,
+    /// The sheet's placeable `lib_symbols` after the call.
+    lib_symbols: Vec<String>,
+    written_to: Option<PathBuf>,
+}
+
+/// Imports a symbol definition from a `.kicad_sym` library into the sheet's `lib_symbols`
+/// (flattening derived symbols as KiCad does), making it placeable. Errors clearly if the
+/// symbol isn't in the library.
+#[allow(clippy::unused_async)]
+pub async fn import_lib_symbol(params: ImportLibSymbolParams) -> Result<CallToolResult, McpError> {
+    let mut sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+    let already = sch.lib_symbol_ids().contains(&params.lib_id);
+
+    let imported = sch
+        .import_lib_symbol(&params.library_path, &params.lib_id)
+        .map_err(to_mcp)?;
+    if !imported && !already {
+        return Err(McpError::invalid_params(
+            format!(
+                "symbol '{}' not found in {}",
+                params.lib_id,
+                params.library_path.display()
+            ),
+            None,
+        ));
+    }
+
+    let written_to = if imported {
+        Some(write_back(&sch, &params.sch_path, params.output_path)?)
+    } else {
+        None
+    };
+    json_result(&ImportResult {
+        imported,
+        lib_symbols: sch.lib_symbol_ids(),
+        written_to,
+    })
+}
+
 // --- place symbol (edit) ---
 
 /// Parameters for the `place_symbol` tool.

@@ -135,6 +135,17 @@ impl KicadMcp {
         tools::schematic::annotate_schematic(params).await
     }
 
+    /// Imports a symbol definition from a `.kicad_sym` library into the sheet, and saves.
+    #[tool(
+        description = "Import a symbol definition from a .kicad_sym library into a .kicad_sch's lib_symbols (so it can be placed), and save"
+    )]
+    async fn import_lib_symbol(
+        &self,
+        Parameters(params): Parameters<tools::schematic::ImportLibSymbolParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::import_lib_symbol(params).await
+    }
+
     /// Places a new symbol instance (of a `lib_id` already defined in the sheet) and saves.
     #[tool(
         description = "Place a new symbol (lib_id must already be in the sheet's lib_symbols) at x/y in a .kicad_sch, and save"
