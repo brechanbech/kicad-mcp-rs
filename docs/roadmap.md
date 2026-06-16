@@ -27,11 +27,42 @@ so it led. The live `ipc` backend, which needs the running GUI, came last.
   fmt / clippy / test / deny on default and `--features files`), plus a
   `kicad-cli`-gated end-to-end `quality_gate` test, mirrored by a local pre-push hook.
 
+## Schematic backend (feature `schematic`)
+
+Headless `.kicad_sch` read/edit, backed by
+[`kicad-sch-rs`](https://codeberg.org/brechanbech/kicad-sch-rs) (no running KiCad /
+`kicad-cli`). Tools, all validated against real KiCad 10 output:
+
+- **Read** — `summarize_schematic` (symbols, nets, counts, placeable `lib_symbols`),
+  `list_symbol_pins` (number/name/connection point).
+- **Build** — `import_lib_symbol` (from a `.kicad_sym`, flattening derived `extends`
+  symbols as KiCad does), `place_symbol`, `set_schematic_property`.
+- **Connect** — `route_schematic_wire` / `route_wire_between_pins` (orthogonal A\*),
+  `label_pin` (net label on a pin), `add_label`, `add_junction`, `mark_no_connect`.
+- **Iterate** — `move_symbol`, `delete_symbol`.
+- **Bulk/annotate** — `annotate_schematic`, plus bulk property edits in the crate.
+
+Known holds (primitives exist in `kicad-sch-rs`; not yet exposed / built):
+
+- **Delete-by-point** — `delete_wire` / `delete_junction` by coordinate, and
+  `delete_label` by net name, exist in the crate but aren't MCP tools yet (awkward to
+  drive by coords; `delete_label` would be trivial to add).
+- **Global labels** — `add_label` emits *local* labels only; fine for single-sheet
+  boards plus power symbols, but global labels are needed for multi-sheet named nets.
+- **Title block / page settings** — paper size and title/rev/company/date are not yet
+  read or editable (the "drawing frame"). Planned as Tier 2 toward a taggable v0.1.
+- **Connectivity readback** — computed nets (which pins share a wire/label) aren't
+  inferred; only declared labels are surfaced.
+
 ## What's next
 
 The major forward plan — project setup, schematic editing, and PCB inspection & edits,
 plus the native Rust `.kicad_sch` editor those depend on — is in
 [`expansion-plan.md`](expansion-plan.md). Smaller near-term items:
+
+- **Schematic Tier 2 / 3** — title block + page settings, then tag a coherent v0.1 of
+  `kicad-sch-rs` + `kicad-mcp-rs` and validate with a real board end-to-end. See the
+  holds above.
 
 - **Confirm CI is green** — Forgejo Actions runs on push automatically; if it doesn't
   trigger, enable Actions in the repo's Settings.
