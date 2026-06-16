@@ -382,7 +382,7 @@ dependencies = [
 
 [[package]]
 name = "kicad-access"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "kicad-ipc-rs",
  "kiutils-rs",
@@ -394,7 +394,7 @@ dependencies = [
 
 [[package]]
 name = "kicad-checks"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -415,7 +415,7 @@ dependencies = [
 
 [[package]]
 name = "kicad-mcp-server"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "kicad-access",

@@ -7,11 +7,12 @@ in Rust. It lets an MCP client (Claude, etc.) inspect and validate KiCad PCB
 designs — DRC, design-for-manufacturability gates, headless board analysis — and
 **read and edit schematics** headlessly, over the ways Rust can reach KiCad.
 
-> Status: **working**. Four backends, validated against KiCad 10.0.3 — `files`
+> Status: **v0.2.0**. Four backends, validated against KiCad 10.0.3 — `files`
 > (headless board summary + geometry), `cli` (DRC plus the DFM quality gate,
 > end-to-end), `ipc` (live connection / version), and `schematic` (headless
-> `.kicad_sch` read/edit — summarize, annotate, set properties, auto-route wires —
-> backed by [`kicad-sch-rs`](https://codeberg.org/brechanbech/kicad-sch-rs)). `cargo
+> `.kicad_sch` read/edit — a full authoring surface: import parts from `.kicad_sym`,
+> place, connect with wires/labels/power, annotate, page setup, and iterate — backed
+> by [`kicad-sch-rs`](https://codeberg.org/brechanbech/kicad-sch-rs) v0.1.0). `cargo
 > check` is clean from the first clone (the default build pulls only well-established
 > crates); opt into the KiCad-specific backends per environment. See
 > [`docs/roadmap.md`](docs/roadmap.md) for what's done and what's next.
