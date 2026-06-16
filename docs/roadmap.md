@@ -40,6 +40,8 @@ Headless `.kicad_sch` read/edit, backed by
 - **Connect** — `route_schematic_wire` / `route_wire_between_pins` (orthogonal A\*),
   `label_pin` (net label on a pin), `add_label`, `add_junction`, `mark_no_connect`.
 - **Iterate** — `move_symbol`, `delete_symbol`.
+- **Page** — `set_page_settings` (paper size), `set_title_block` (title/date/rev/company);
+  `summarize_schematic` also reports `paper` and the title block.
 - **Bulk/annotate** — `annotate_schematic`, plus bulk property edits in the crate.
 
 Known holds (primitives exist in `kicad-sch-rs`; not yet exposed / built):
@@ -49,8 +51,8 @@ Known holds (primitives exist in `kicad-sch-rs`; not yet exposed / built):
   drive by coords; `delete_label` would be trivial to add).
 - **Global labels** — `add_label` emits *local* labels only; fine for single-sheet
   boards plus power symbols, but global labels are needed for multi-sheet named nets.
-- **Title block / page settings** — paper size and title/rev/company/date are not yet
-  read or editable (the "drawing frame"). Planned as Tier 2 toward a taggable v0.1.
+- **Title-block comments** — `set_title_block` covers title/date/rev/company; the numbered
+  `(comment N …)` fields are read but not yet settable.
 - **Connectivity readback** — computed nets (which pins share a wire/label) aren't
   inferred; only declared labels are surfaced.
 
@@ -60,9 +62,10 @@ The major forward plan — project setup, schematic editing, and PCB inspection 
 plus the native Rust `.kicad_sch` editor those depend on — is in
 [`expansion-plan.md`](expansion-plan.md). Smaller near-term items:
 
-- **Schematic Tier 2 / 3** — title block + page settings, then tag a coherent v0.1 of
-  `kicad-sch-rs` + `kicad-mcp-rs` and validate with a real board end-to-end. See the
-  holds above.
+- **Schematic Tier 3** — tag a coherent v0.1 of `kicad-sch-rs` + `kicad-mcp-rs` (bump
+  versions, optionally publish `kicad-sch-rs` to crates.io so the MCP server pins a release
+  instead of the git dep), then validate with a real board end-to-end. (Tier 1 connectivity
+  and Tier 2 page settings are done.) See the holds above.
 
 - **Confirm CI is green** — Forgejo Actions runs on push automatically; if it doesn't
   trigger, enable Actions in the repo's Settings.
