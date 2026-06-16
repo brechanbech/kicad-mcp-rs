@@ -74,6 +74,19 @@ struct SchematicSummary {
     nets: Vec<String>,
     /// Library symbol ids defined in the sheet — the set `place_symbol` may instantiate.
     lib_symbols: Vec<String>,
+    /// Paper size, e.g. `A4`.
+    paper: Option<String>,
+    /// Drawing-frame fields, if a title block is present.
+    title_block: Option<TitleBlockInfo>,
+}
+
+/// The title-block fields surfaced in a summary (comments are omitted).
+#[derive(Debug, Serialize)]
+struct TitleBlockInfo {
+    title: Option<String>,
+    date: Option<String>,
+    rev: Option<String>,
+    company: Option<String>,
 }
 
 /// Parses the schematic from disk and returns a JSON summary of its elements.
@@ -103,6 +116,13 @@ pub async fn summarize_schematic(
             .collect(),
         nets: sch.labels().into_iter().map(|l| l.text).collect(),
         lib_symbols: sch.lib_symbol_ids(),
+        paper: sch.paper(),
+        title_block: sch.title_block().map(|tb| TitleBlockInfo {
+            title: tb.title,
+            date: tb.date,
+            rev: tb.rev,
+            company: tb.company,
+        }),
     };
     json_result(&summary)
 }
@@ -700,6 +720,121 @@ pub async fn delete_symbol(params: DeleteSymbolParams) -> Result<CallToolResult,
     let written_to = write_back(&sch, &params.sch_path, params.output_path)?;
     json_result(&SymbolEdit {
         reference: params.reference,
+        written_to,
+    })
+}
+
+// --- page settings (edit) ---
+
+/// Standard KiCad paper sizes accepted by `set_page_settings`.
+const PAPER_SIZES: &[&str] = &[
+    "A0", "A1", "A2", "A3", "A4", "A5", "A", "B", "C", "D", "E", "USLetter", "USLegal", "USLedger",
+];
+
+/// Parameters for the `set_page_settings` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct SetPageSettingsParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// Paper size — one of A0–A5, A–E, `USLetter`, `USLegal`, `USLedger`.
+    pub paper_size: String,
+    /// Where to write the result. Defaults to overwriting `sch_path` in place.
+    #[serde(default)]
+    pub output_path: Option<PathBuf>,
+}
+
+/// Outcome of a `set_page_settings` call.
+#[derive(Debug, Serialize)]
+struct PageResult {
+    paper: String,
+    written_to: PathBuf,
+}
+
+/// Sets the sheet's paper size.
+#[allow(clippy::unused_async)]
+pub async fn set_page_settings(params: SetPageSettingsParams) -> Result<CallToolResult, McpError> {
+    if !PAPER_SIZES.contains(&params.paper_size.as_str()) {
+        return Err(McpError::invalid_params(
+            format!(
+                "unknown paper size '{}'; expected one of [{}]",
+                params.paper_size,
+                PAPER_SIZES.join(", ")
+            ),
+            None,
+        ));
+    }
+    let mut sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+    sch.set_paper(&params.paper_size).map_err(to_mcp)?;
+    let written_to = write_back(&sch, &params.sch_path, params.output_path)?;
+    json_result(&PageResult {
+        paper: params.paper_size,
+        written_to,
+    })
+}
+
+/// Parameters for the `set_title_block` tool. Provide any subset of fields to set.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct SetTitleBlockParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// Drawing title.
+    #[serde(default)]
+    pub title: Option<String>,
+    /// Date string (stored verbatim).
+    #[serde(default)]
+    pub date: Option<String>,
+    /// Revision.
+    #[serde(default)]
+    pub rev: Option<String>,
+    /// Company name.
+    #[serde(default)]
+    pub company: Option<String>,
+    /// Where to write the result. Defaults to overwriting `sch_path` in place.
+    #[serde(default)]
+    pub output_path: Option<PathBuf>,
+}
+
+/// Outcome of a `set_title_block` call — the resulting fields and where it was written.
+#[derive(Debug, Serialize)]
+struct TitleBlockResult {
+    title: Option<String>,
+    date: Option<String>,
+    rev: Option<String>,
+    company: Option<String>,
+    written_to: PathBuf,
+}
+
+/// Sets the given title-block fields (any subset of title/date/rev/company), creating the
+/// title block if needed.
+#[allow(clippy::unused_async)]
+pub async fn set_title_block(params: SetTitleBlockParams) -> Result<CallToolResult, McpError> {
+    let mut sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+    let fields = [
+        ("title", &params.title),
+        ("date", &params.date),
+        ("rev", &params.rev),
+        ("company", &params.company),
+    ];
+    let mut any = false;
+    for (field, value) in fields {
+        if let Some(value) = value {
+            sch.set_title_block_field(field, value).map_err(to_mcp)?;
+            any = true;
+        }
+    }
+    if !any {
+        return Err(McpError::invalid_params(
+            "provide at least one of title, date, rev, company".to_owned(),
+            None,
+        ));
+    }
+    let written_to = write_back(&sch, &params.sch_path, params.output_path)?;
+    let tb = sch.title_block().unwrap_or_default();
+    json_result(&TitleBlockResult {
+        title: tb.title,
+        date: tb.date,
+        rev: tb.rev,
+        company: tb.company,
         written_to,
     })
 }

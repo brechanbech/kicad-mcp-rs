@@ -97,6 +97,8 @@ bumping `rmcp` is what adopts future MCP versions — no handler changes needed.
 | `mark_no_connect`       | schematic | `--features schematic` | Flag a pin as intentionally unconnected (ERC), save |
 | `move_symbol`           | schematic | `--features schematic` | Move a placed symbol to a new x/y/angle, save |
 | `delete_symbol`         | schematic | `--features schematic` | Delete a placed symbol, save |
+| `set_page_settings`     | schematic | `--features schematic` | Set the paper size, save |
+| `set_title_block`       | schematic | `--features schematic` | Set title-block fields (title/date/rev/company), save |
 
 The `schematic` tools edit the file in place unless an `output_path` is given, and
 preserve every untouched byte (formatting, comments, unknown tokens) via

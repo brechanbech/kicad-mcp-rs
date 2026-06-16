@@ -262,6 +262,28 @@ impl KicadMcp {
     ) -> Result<CallToolResult, McpError> {
         tools::schematic::delete_symbol(params).await
     }
+
+    /// Sets the sheet's paper size, and saves.
+    #[tool(
+        description = "Set the paper size (A0-A5, A-E, USLetter/USLegal/USLedger) of a .kicad_sch, and save"
+    )]
+    async fn set_page_settings(
+        &self,
+        Parameters(params): Parameters<tools::schematic::SetPageSettingsParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::set_page_settings(params).await
+    }
+
+    /// Sets title-block fields (title/date/rev/company), and saves.
+    #[tool(
+        description = "Set title-block fields (any of title/date/rev/company) in a .kicad_sch, and save"
+    )]
+    async fn set_title_block(
+        &self,
+        Parameters(params): Parameters<tools::schematic::SetTitleBlockParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::set_title_block(params).await
+    }
 }
 
 impl Default for KicadMcp {
