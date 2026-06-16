@@ -198,6 +198,70 @@ impl KicadMcp {
     ) -> Result<CallToolResult, McpError> {
         tools::schematic::route_wire_between_pins(params).await
     }
+
+    /// Attaches a net label to a pin (connects pins by net name, no wire needed), and saves.
+    #[tool(
+        description = "Attach a net label to a pin (by reference + pin number) to connect it by net name, and save"
+    )]
+    async fn label_pin(
+        &self,
+        Parameters(params): Parameters<tools::schematic::LabelPinParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::label_pin(params).await
+    }
+
+    /// Places a local net label at a point (e.g. on a wire), and saves.
+    #[tool(
+        description = "Place a local net label at x/y (e.g. on a wire) in a .kicad_sch, and save"
+    )]
+    async fn add_label(
+        &self,
+        Parameters(params): Parameters<tools::schematic::AddLabelParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::add_label(params).await
+    }
+
+    /// Adds a junction dot where wires connect, and saves.
+    #[tool(
+        description = "Add a junction dot at x/y where wires cross and should connect, and save"
+    )]
+    async fn add_junction(
+        &self,
+        Parameters(params): Parameters<tools::schematic::AddJunctionParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::add_junction(params).await
+    }
+
+    /// Flags a pin as intentionally unconnected (ERC), and saves.
+    #[tool(
+        description = "Flag a pin (by reference + pin number) as intentionally unconnected (no-connect) for ERC, and save"
+    )]
+    async fn mark_no_connect(
+        &self,
+        Parameters(params): Parameters<tools::schematic::MarkNoConnectParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::mark_no_connect(params).await
+    }
+
+    /// Moves a placed symbol to a new position/rotation, and saves.
+    #[tool(
+        description = "Move a placed symbol (by reference) to a new x/y/angle in a .kicad_sch, and save"
+    )]
+    async fn move_symbol(
+        &self,
+        Parameters(params): Parameters<tools::schematic::MoveSymbolParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::move_symbol(params).await
+    }
+
+    /// Deletes a placed symbol from the sheet, and saves.
+    #[tool(description = "Delete a placed symbol (by reference) from a .kicad_sch, and save")]
+    async fn delete_symbol(
+        &self,
+        Parameters(params): Parameters<tools::schematic::DeleteSymbolParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tools::schematic::delete_symbol(params).await
+    }
 }
 
 impl Default for KicadMcp {

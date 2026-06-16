@@ -483,3 +483,223 @@ pub async fn route_wire_between_pins(
     let result = route_and_write(&mut sch, start, end, &params.sch_path, params.output_path)?;
     json_result(&result)
 }
+
+// --- connections & iteration (edit) ---
+
+/// A newly added node (label, junction, …) and where the sheet was written.
+#[derive(Debug, Serialize)]
+struct AddedNode {
+    uuid: String,
+    written_to: PathBuf,
+}
+
+/// A node placed at a resolved point (e.g. on a pin), with that point echoed back.
+#[derive(Debug, Serialize)]
+struct PlacedAtPoint {
+    uuid: String,
+    x: f64,
+    y: f64,
+    written_to: PathBuf,
+}
+
+/// A symbol-level edit (move/delete) and where the sheet was written.
+#[derive(Debug, Serialize)]
+struct SymbolEdit {
+    reference: String,
+    written_to: PathBuf,
+}
+
+/// An add-method returned `None` only when the sheet has no `kicad_sch` root.
+fn require_uuid(uuid: Option<String>) -> Result<String, McpError> {
+    uuid.ok_or_else(|| McpError::internal_error("document has no kicad_sch root", None))
+}
+
+/// Parameters for the `label_pin` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct LabelPinParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// Reference of the symbol whose pin to label, e.g. `U1`.
+    pub reference: String,
+    /// Pin number on that symbol, e.g. `1`.
+    pub pin: String,
+    /// Net name the label carries, e.g. `SDA`. Pins sharing a net name are connected.
+    pub net: String,
+    /// Label rotation in degrees. Defaults to 0.
+    #[serde(default)]
+    pub angle: f64,
+    /// Where to write the result. Defaults to overwriting `sch_path` in place.
+    #[serde(default)]
+    pub output_path: Option<PathBuf>,
+}
+
+/// Attaches a net label to a pin's connection point — the way to connect pins by net name
+/// (no wire needed). Two pins with the same net label are on the same net.
+#[allow(clippy::unused_async)]
+pub async fn label_pin(params: LabelPinParams) -> Result<CallToolResult, McpError> {
+    let mut sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+    let at = resolve_pin(&sch, &params.reference, &params.pin)?;
+    let uuid = require_uuid(
+        sch.add_label(&params.net, at.x, at.y, params.angle)
+            .map_err(to_mcp)?,
+    )?;
+    let written_to = write_back(&sch, &params.sch_path, params.output_path)?;
+    json_result(&PlacedAtPoint {
+        uuid,
+        x: at.x,
+        y: at.y,
+        written_to,
+    })
+}
+
+/// Parameters for the `add_label` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct AddLabelParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// Net name the label carries.
+    pub text: String,
+    /// X position (mm).
+    pub x: f64,
+    /// Y position (mm).
+    pub y: f64,
+    /// Label rotation in degrees. Defaults to 0.
+    #[serde(default)]
+    pub angle: f64,
+    /// Where to write the result. Defaults to overwriting `sch_path` in place.
+    #[serde(default)]
+    pub output_path: Option<PathBuf>,
+}
+
+/// Places a local net label at a point (e.g. on a wire) — for naming a net not anchored to
+/// a specific pin. Use `label_pin` to label a pin directly.
+#[allow(clippy::unused_async)]
+pub async fn add_label(params: AddLabelParams) -> Result<CallToolResult, McpError> {
+    let mut sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+    let uuid = require_uuid(
+        sch.add_label(&params.text, params.x, params.y, params.angle)
+            .map_err(to_mcp)?,
+    )?;
+    let written_to = write_back(&sch, &params.sch_path, params.output_path)?;
+    json_result(&AddedNode { uuid, written_to })
+}
+
+/// Parameters for the `add_junction` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct AddJunctionParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// X position (mm).
+    pub x: f64,
+    /// Y position (mm).
+    pub y: f64,
+    /// Where to write the result. Defaults to overwriting `sch_path` in place.
+    #[serde(default)]
+    pub output_path: Option<PathBuf>,
+}
+
+/// Adds a junction dot where wires cross and should connect (a T or + intersection).
+#[allow(clippy::unused_async)]
+pub async fn add_junction(params: AddJunctionParams) -> Result<CallToolResult, McpError> {
+    let mut sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+    let uuid = require_uuid(sch.add_junction(params.x, params.y).map_err(to_mcp)?)?;
+    let written_to = write_back(&sch, &params.sch_path, params.output_path)?;
+    json_result(&AddedNode { uuid, written_to })
+}
+
+/// Parameters for the `mark_no_connect` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct MarkNoConnectParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// Reference of the symbol, e.g. `U1`.
+    pub reference: String,
+    /// Pin number to flag as intentionally unconnected, e.g. `7`.
+    pub pin: String,
+    /// Where to write the result. Defaults to overwriting `sch_path` in place.
+    #[serde(default)]
+    pub output_path: Option<PathBuf>,
+}
+
+/// Flags a pin as intentionally unconnected (a no-connect), so it passes ERC.
+#[allow(clippy::unused_async)]
+pub async fn mark_no_connect(params: MarkNoConnectParams) -> Result<CallToolResult, McpError> {
+    let mut sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+    let at = resolve_pin(&sch, &params.reference, &params.pin)?;
+    let uuid = require_uuid(sch.add_no_connect(at.x, at.y).map_err(to_mcp)?)?;
+    let written_to = write_back(&sch, &params.sch_path, params.output_path)?;
+    json_result(&PlacedAtPoint {
+        uuid,
+        x: at.x,
+        y: at.y,
+        written_to,
+    })
+}
+
+/// Parameters for the `move_symbol` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct MoveSymbolParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// Reference of the symbol to move, e.g. `R1`.
+    pub reference: String,
+    /// New X position (mm).
+    pub x: f64,
+    /// New Y position (mm).
+    pub y: f64,
+    /// New rotation in degrees. Defaults to 0.
+    #[serde(default)]
+    pub angle: f64,
+    /// Where to write the result. Defaults to overwriting `sch_path` in place.
+    #[serde(default)]
+    pub output_path: Option<PathBuf>,
+}
+
+/// Moves a placed symbol to a new position/rotation.
+#[allow(clippy::unused_async)]
+pub async fn move_symbol(params: MoveSymbolParams) -> Result<CallToolResult, McpError> {
+    let mut sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+    if !sch
+        .move_symbol(&params.reference, params.x, params.y, params.angle)
+        .map_err(to_mcp)?
+    {
+        return Err(McpError::invalid_params(
+            format!("no symbol with reference {}", params.reference),
+            None,
+        ));
+    }
+    let written_to = write_back(&sch, &params.sch_path, params.output_path)?;
+    json_result(&SymbolEdit {
+        reference: params.reference,
+        written_to,
+    })
+}
+
+/// Parameters for the `delete_symbol` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct DeleteSymbolParams {
+    /// Absolute path to the `.kicad_sch`.
+    pub sch_path: PathBuf,
+    /// Reference of the symbol to delete, e.g. `R1`.
+    pub reference: String,
+    /// Where to write the result. Defaults to overwriting `sch_path` in place.
+    #[serde(default)]
+    pub output_path: Option<PathBuf>,
+}
+
+/// Deletes a placed symbol from the sheet.
+#[allow(clippy::unused_async)]
+pub async fn delete_symbol(params: DeleteSymbolParams) -> Result<CallToolResult, McpError> {
+    let mut sch = Schematic::from_file(&params.sch_path).map_err(to_mcp)?;
+    if !sch.delete_symbol(&params.reference).map_err(to_mcp)? {
+        return Err(McpError::invalid_params(
+            format!("no symbol with reference {}", params.reference),
+            None,
+        ));
+    }
+    let written_to = write_back(&sch, &params.sch_path, params.output_path)?;
+    json_result(&SymbolEdit {
+        reference: params.reference,
+        written_to,
+    })
+}

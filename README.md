@@ -91,6 +91,12 @@ bumping `rmcp` is what adopts future MCP versions — no handler changes needed.
 | `route_schematic_wire`  | schematic | `--features schematic` | Auto-route an orthogonal wire (by x/y) around symbol bodies, save |
 | `list_symbol_pins`      | schematic | `--features schematic` | A symbol's pins: number, name, x/y connection point |
 | `route_wire_between_pins`| schematic | `--features schematic` | Auto-route a wire between two pins (by reference + pin number), save |
+| `label_pin`             | schematic | `--features schematic` | Attach a net label to a pin (connect by net name), save |
+| `add_label`             | schematic | `--features schematic` | Place a local net label at x/y (e.g. on a wire), save |
+| `add_junction`          | schematic | `--features schematic` | Add a junction dot at x/y where wires connect, save |
+| `mark_no_connect`       | schematic | `--features schematic` | Flag a pin as intentionally unconnected (ERC), save |
+| `move_symbol`           | schematic | `--features schematic` | Move a placed symbol to a new x/y/angle, save |
+| `delete_symbol`         | schematic | `--features schematic` | Delete a placed symbol, save |
 
 The `schematic` tools edit the file in place unless an `output_path` is given, and
 preserve every untouched byte (formatting, comments, unknown tokens) via
