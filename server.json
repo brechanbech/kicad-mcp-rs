@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.brechanbech/kicad-mcp-rs",
+  "title": "KiCad",
+  "description": "Model Context Protocol server for KiCad, in Rust",
+  "version": "0.2.0",
+  "websiteUrl": "https://codeberg.org/brechanbech/kicad-mcp-rs",
+  "repository": {
+    "url": "https://github.com/brechanbech/kicad-mcp-rs",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "cargo",
+      "identifier": "kicad-mcp-server",
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

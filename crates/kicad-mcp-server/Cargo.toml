@@ -7,6 +7,9 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
+readme = "../../README.md"
+keywords = ["mcp", "kicad", "eda", "pcb", "ai"]
+categories = ["development-tools", "command-line-utilities"]
 
 [[bin]]
 name = "kicad-mcp-rs"

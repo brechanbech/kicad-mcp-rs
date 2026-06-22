@@ -174,3 +174,10 @@ MIT — see [`LICENSE.md`](LICENSE.md). Dependency and any adapted-logic notices
 [`THIRD-PARTY-LICENSES.md`](THIRD-PARTY-LICENSES.md) and [`ATTRIBUTION.md`](ATTRIBUTION.md).
 KiCad itself (GPLv3) is not linked; all access is arm's-length (separate process /
 file parsing).
+
+## MCP registry
+
+Ownership-verification token for the [MCP registry](https://registry.modelcontextprotocol.io)
+(read from this crate's rendered README on crates.io):
+
+> Registry ownership token: `mcp-name: io.github.brechanbech/kicad-mcp-rs`

@@ -11,8 +11,8 @@ version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
-repository = "https://github.com/brechanbech/kicad-mcp-rs"
-authors = ["Stefan <stefan@example.com>"]
+repository = "https://codeberg.org/brechanbech/kicad-mcp-rs"
+authors = ["Stefan Ractliffe"]
 
 # Shared dependency versions. Crates opt in via `dep.workspace = true`.
 [workspace.dependencies]
@@ -41,8 +41,8 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 
 # Internal crates
-kicad-access = { path = "crates/kicad-access" }
-kicad-checks = { path = "crates/kicad-checks" }
+kicad-access = { path = "crates/kicad-access", version = "0.2.0" }
+kicad-checks = { path = "crates/kicad-checks", version = "0.2.0" }
 
 # M-STATIC-VERIFICATION: workspace-wide lint policy, inherited per-crate via `[lints] workspace = true`.
 [workspace.lints.rust]
