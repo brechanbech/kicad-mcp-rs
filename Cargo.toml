@@ -9,7 +9,7 @@ members = [
 [workspace.package]
 version = "0.2.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 license = "MIT"
 repository = "https://codeberg.org/brechanbech/kicad-mcp-rs"
 authors = ["Stefan Ractliffe"]
@@ -17,7 +17,7 @@ authors = ["Stefan Ractliffe"]
 # Shared dependency versions. Crates opt in via `dep.workspace = true`.
 [workspace.dependencies]
 # --- MCP ---
-rmcp = { version = "1.7", features = ["server", "macros", "transport-io"] }
+rmcp = { version = "3", features = ["server", "macros", "transport-io"] }
 
 # --- KiCad access (optional, behind features in kicad-access) ---
 kicad-ipc-rs = "0.5"   # live IPC client (needs a running KiCad / kicad-cli api-server)

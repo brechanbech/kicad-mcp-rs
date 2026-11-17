@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 
 use rmcp::ErrorData as McpError;
-use rmcp::model::{CallToolResult, Content};
+use rmcp::model::{CallToolResult, ContentBlock};
 use schemars::JsonSchema;
 use serde::Deserialize;
 
@@ -23,5 +23,5 @@ pub async fn summarize_board(params: SummarizeBoardParams) -> Result<CallToolRes
     let summary = kicad_access::files::summarize_board(&params.pcb_path).map_err(to_mcp)?;
     let json = serde_json::to_string_pretty(&summary)
         .map_err(|e| McpError::internal_error(e.to_string(), None))?;
-    Ok(CallToolResult::success(vec![Content::text(json)]))
+    Ok(CallToolResult::success(vec![ContentBlock::text(json)]))
 }

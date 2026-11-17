@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 use kicad_sch_rs::{Point, Schematic};
 use rmcp::ErrorData as McpError;
-use rmcp::model::{CallToolResult, Content};
+use rmcp::model::{CallToolResult, ContentBlock};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -30,7 +30,7 @@ fn to_mcp(err: kicad_sch_rs::Error) -> McpError {
 fn json_result<T: Serialize>(value: &T) -> Result<CallToolResult, McpError> {
     let json = serde_json::to_string_pretty(value)
         .map_err(|e| McpError::internal_error(e.to_string(), None))?;
-    Ok(CallToolResult::success(vec![Content::text(json)]))
+    Ok(CallToolResult::success(vec![ContentBlock::text(json)]))
 }
 
 /// Writes the schematic to `output` (or back over `input` when `output` is `None`),

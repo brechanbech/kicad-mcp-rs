@@ -178,7 +178,7 @@ mod tests {
             .into_outcome();
         assert!(!outcome.is_blocking());
         assert_eq!(outcome.severity, None);
-        assert!(outcome.findings.is_empty());
+        assert_eq!(outcome.findings, Vec::<String>::new());
     }
 
     #[test]

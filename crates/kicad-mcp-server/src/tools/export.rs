@@ -7,7 +7,7 @@
 use std::path::PathBuf;
 
 use rmcp::ErrorData as McpError;
-use rmcp::model::{CallToolResult, Content};
+use rmcp::model::{CallToolResult, ContentBlock};
 use schemars::JsonSchema;
 use serde::Deserialize;
 
@@ -27,7 +27,7 @@ pub struct RunDrcParams {
 /// Runs DRC and returns KiCad's raw JSON report as the tool result.
 pub async fn run_drc(cli: &KicadCli, params: RunDrcParams) -> Result<CallToolResult, McpError> {
     let report = cli.run_drc(&params.pcb_path).await.map_err(to_mcp)?;
-    Ok(CallToolResult::success(vec![Content::text(report)]))
+    Ok(CallToolResult::success(vec![ContentBlock::text(report)]))
 }
 
 /// Parameters for the `quality_gate` tool.
@@ -80,7 +80,7 @@ pub async fn quality_gate(
     let json = report
         .to_json()
         .map_err(|e| McpError::internal_error(e.to_string(), None))?;
-    Ok(CallToolResult::success(vec![Content::text(json)]))
+    Ok(CallToolResult::success(vec![ContentBlock::text(json)]))
 }
 
 /// DFM gate outcomes from real board geometry, read via the headless `files` backend.
